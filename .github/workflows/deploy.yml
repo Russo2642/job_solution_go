@@ -92,15 +92,22 @@ jobs:
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             EOL
 
-            # Перемещаем всё из домашней директории в job_solution
-            if [ -d ~/internal ]; then
-              cp -r ~/internal .
+            # Создание директории с правильными правами доступа
+            mkdir -p internal/db/migrations
+            rm -rf internal/db/migrations/*  # Удаляем старые миграции если они есть
+            
+            # Копируем файлы миграций с правильными правами доступа
+            if [ -d ~/internal/db/migrations ]; then
+              cp -r ~/internal/db/migrations/* internal/db/migrations/
+              # Устанавливаем правильные права доступа
+              chmod -R 755 internal/db
+              # Удаляем лишние файлы
               rm -rf ~/internal
             fi
 
             # Проверка наличия директории с миграциями
-            if [ ! -d "internal/db/migrations" ]; then
-              echo "Error: Migrations directory does not exist!"
+            if [ ! -d "internal/db/migrations" ] || [ -z "$(ls -A internal/db/migrations)" ]; then
+              echo "Error: Migrations directory is empty or does not exist!"
               exit 1
             fi
 
