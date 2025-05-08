@@ -93,16 +93,18 @@ jobs:
             EOL
 
             # Создание директории с правильными правами доступа
-            mkdir -p internal/db/migrations
-            rm -rf internal/db/migrations/*  # Удаляем старые миграции если они есть
+            sudo mkdir -p internal/db/migrations
+            sudo rm -rf internal/db/migrations/*  # Удаляем старые миграции если они есть
             
             # Копируем файлы миграций с правильными правами доступа
             if [ -d ~/internal/db/migrations ]; then
-              cp -r ~/internal/db/migrations/* internal/db/migrations/
+              sudo cp -r ~/internal/db/migrations/* internal/db/migrations/
               # Устанавливаем правильные права доступа
-              chmod -R 755 internal/db
+              sudo chmod -R 777 internal/db
+              # Изменяем владельца директории на текущего пользователя
+              sudo chown -R $(whoami):$(whoami) internal
               # Удаляем лишние файлы
-              rm -rf ~/internal
+              sudo rm -rf ~/internal
             fi
 
             # Проверка наличия директории с миграциями
