@@ -1,0 +1,1418 @@
+basePath: /api
+definitions:
+  handlers.UpdateColorInput:
+    properties:
+      color:
+        maxLength: 7
+        minLength: 4
+        type: string
+    required:
+    - color
+    type: object
+  models.CompanyInput:
+    properties:
+      address:
+        type: string
+      city_id:
+        minimum: 1
+        type: integer
+      email:
+        type: string
+      industries:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      logo:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      size:
+        enum:
+        - small
+        - medium
+        - large
+        - enterprise
+        type: string
+      website:
+        type: string
+    required:
+    - industries
+    - name
+    - size
+    type: object
+  models.ForgotPasswordInput:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  models.ResetPasswordInput:
+    properties:
+      password:
+        minLength: 8
+        type: string
+      password_confirm:
+        type: string
+      token:
+        type: string
+    required:
+    - password
+    - password_confirm
+    - token
+    type: object
+  models.ReviewInput:
+    properties:
+      benefit_type_ids:
+        items:
+          type: integer
+        type: array
+      category_ratings:
+        additionalProperties:
+          type: number
+        type: object
+      city_id:
+        minimum: 1
+        type: integer
+      company_id:
+        minimum: 1
+        type: integer
+      cons:
+        minLength: 10
+        type: string
+      employment_period_id:
+        minimum: 1
+        type: integer
+      employment_type_id:
+        minimum: 1
+        type: integer
+      is_former_employee:
+        type: boolean
+      position:
+        maxLength: 100
+        minLength: 2
+        type: string
+      pros:
+        minLength: 10
+        type: string
+    required:
+    - category_ratings
+    - city_id
+    - company_id
+    - cons
+    - employment_period_id
+    - employment_type_id
+    - position
+    - pros
+    type: object
+  models.ReviewModerationInput:
+    properties:
+      moderation_comment:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/models.ReviewStatus'
+        enum:
+        - approved
+        - rejected
+    required:
+    - status
+    type: object
+  models.ReviewStatus:
+    enum:
+    - pending
+    - approved
+    - rejected
+    type: string
+    x-enum-varnames:
+    - ReviewStatusPending
+    - ReviewStatusApproved
+    - ReviewStatusRejected
+  models.UserLoginInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.UserRegisterInput:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      password_confirm:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - password
+    - password_confirm
+    type: object
+  models.UserUpdateInput:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      phone:
+        type: string
+    type: object
+  utils.ErrorResponseDTO:
+    properties:
+      error:
+        properties:
+          debug:
+            example: Детали ошибки для отладки
+            type: string
+          message:
+            example: Описание ошибки
+            type: string
+        type: object
+      success:
+        example: false
+        type: boolean
+    type: object
+  utils.ResponseDTO:
+    properties:
+      data: {}
+      success:
+        example: true
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: API также доступно по пути /api/v1 для обратной совместимости
+  title: JobSolution API
+  version: "1.0"
+paths:
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Отправляет запрос на восстановление пароля и создает токен для
+        сброса
+      parameters:
+      - description: Email пользователя
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ForgotPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Восстановление пароля
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Аутентифицирует пользователя и выдает токены
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserLoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Вход в систему
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: Выход из системы, удаление refresh токена
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: input
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Выход из системы
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Обновляет пару access/refresh токенов
+      parameters:
+      - description: Refresh токен
+        in: body
+        name: input
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Обновление токенов
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: Сбрасывает пароль пользователя по токену
+      parameters:
+      - description: Данные для сброса пароля
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ResetPasswordInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Сброс пароля
+      tags:
+      - auth
+  /benefit-types:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех доступных типов бенефитов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение всех типов бенефитов
+      tags:
+      - benefit-types
+  /benefit-types/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о типе бенефита по его ID
+      parameters:
+      - description: ID типа бенефита
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение типа бенефита по ID
+      tags:
+      - benefit-types
+  /cities:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список городов с возможностью фильтрации и пагинации
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: search
+        type: string
+      - description: Фильтр по стране
+        in: query
+        name: country
+        type: string
+      - description: Поле для сортировки (name, region)
+        in: query
+        name: sort_by
+        type: string
+      - description: Порядок сортировки (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Список городов
+      tags:
+      - cities
+  /cities/search:
+    get:
+      consumes:
+      - application/json
+      description: Ищет города по названию или региону для автодополнения
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: query
+        required: true
+        type: string
+      - description: Максимальное количество результатов (по умолчанию 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Поиск городов
+      tags:
+      - cities
+  /companies:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список компаний с возможностью фильтрации и пагинации
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: search
+        type: string
+      - collectionFormat: csv
+        description: 'Фильтр по индустриям (может содержать несколько ID индустрий
+          через запятую, например: industries=1,2,3)'
+        in: query
+        items:
+          type: integer
+        name: industries
+        type: array
+      - description: Фильтр по размеру компании
+        enum:
+        - small
+        - medium
+        - large
+        - enterprise
+        in: query
+        name: size
+        type: string
+      - description: Фильтр по названию города
+        in: query
+        name: city
+        type: string
+      - description: Фильтр по ID города
+        in: query
+        name: city_id
+        type: integer
+      - description: Поле для сортировки (name, rating, reviews_count, created_at)
+        in: query
+        name: sort_by
+        type: string
+      - description: Порядок сортировки (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Список компаний
+      tags:
+      - companies
+    post:
+      consumes:
+      - application/json
+      description: Создает новую компанию
+      parameters:
+      - description: Данные компании (name, size, city_id, industries обязательны)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CompanyInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание компании
+      tags:
+      - companies
+  /companies/{id_or_slug}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает детальную информацию о компании по её ID или slug
+      parameters:
+      - description: ID или slug компании
+        in: path
+        name: id_or_slug
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Информация о компании
+      tags:
+      - companies
+  /employment-periods:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех доступных периодов работы
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение всех периодов работы
+      tags:
+      - employment-periods
+  /employment-periods/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о периоде работы по его ID
+      parameters:
+      - description: ID периода работы
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение периода работы по ID
+      tags:
+      - employment-periods
+  /employment-types:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех доступных типов занятости
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение всех типов занятости
+      tags:
+      - employment-types
+  /employment-types/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о типе занятости по его ID
+      parameters:
+      - description: ID типа занятости
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение типа занятости по ID
+      tags:
+      - employment-types
+  /industries:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отраслей с возможностью фильтрации и пагинации
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: search
+        type: string
+      - description: Поле для сортировки (name)
+        in: query
+        name: sort_by
+        type: string
+      - description: Порядок сортировки (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Список отраслей
+      tags:
+      - industries
+  /industries/{id}/color:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет цвет (hex) указанной индустрии
+      parameters:
+      - description: ID индустрии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления цвета
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateColorInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление цвета индустрии
+      tags:
+      - industries
+  /industries/company/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отраслей указанной компании
+      parameters:
+      - description: ID компании
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Отрасли компании
+      tags:
+      - industries
+  /rating-categories:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех доступных категорий рейтингов
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение всех категорий рейтингов
+      tags:
+      - rating-categories
+  /rating-categories/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает категорию рейтинга по её ID
+      parameters:
+      - description: ID категории рейтинга
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение категории рейтинга по ID
+      tags:
+      - rating-categories
+  /reviews:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый отзыв о компании
+      parameters:
+      - description: Данные отзыва
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReviewInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание отзыва
+      tags:
+      - reviews
+  /reviews/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает отзыв по его ID
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Получение отзыва
+      tags:
+      - reviews
+  /reviews/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: Одобряет отзыв, прошедший модерацию
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные модерации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReviewModerationInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Одобрение отзыва
+      tags:
+      - reviews
+  /reviews/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Отклоняет отзыв с указанием причины
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные модерации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReviewModerationInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отклонение отзыва
+      tags:
+      - reviews
+  /reviews/{id}/useful:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет отметку "полезно" с отзыва
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Убрать отметку "полезно"
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      description: Добавляет отметку "полезно" для отзыва
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отметить отзыв как полезный
+      tags:
+      - reviews
+  /reviews/company/{companyId}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отзывов о компании
+      parameters:
+      - description: ID компании
+        in: path
+        name: companyId
+        required: true
+        type: integer
+      - description: Поле для сортировки (rating, created_at)
+        in: query
+        name: sort_by
+        type: string
+      - description: Порядок сортировки (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      - description: Фильтр по ID города
+        in: query
+        name: city_id
+        type: integer
+      - description: Минимальный рейтинг (от 1 до 5)
+        in: query
+        name: min_rating
+        type: number
+      - description: Максимальный рейтинг (от 1 до 5)
+        in: query
+        name: max_rating
+        type: number
+      - description: Фильтр по статусу бывшего сотрудника (true/false)
+        in: query
+        name: is_former_employee
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Отзывы о компании
+      tags:
+      - reviews
+  /reviews/moderation/pending:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отзывов, ожидающих модерации
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отзывы на модерации
+      tags:
+      - reviews
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает профиль текущего пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Профиль пользователя
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет профиль текущего пользователя
+      parameters:
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление профиля
+      tags:
+      - users
+  /users/me/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает отзывы текущего пользователя
+      parameters:
+      - description: Статус отзывов (pending, approved, rejected)
+        in: query
+        name: status
+        type: string
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отзывы пользователя
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: 'Используйте JWT токен с префиксом "Bearer ". Пример: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

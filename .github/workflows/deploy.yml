@@ -1,0 +1,81 @@
+name: Deploy JobSolution
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/job_solution:latest
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p ~/job_solution
+            cd ~/job_solution
+            
+            # Создание .env файла с секретами
+            cat > .env << EOL
+            # Настройки сервера
+            SERVER_PORT=${{ secrets.SERVER_PORT || '8080' }}
+            SERVER_MODE=${{ secrets.SERVER_MODE || 'production' }}
+            
+            # PostgreSQL
+            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT || '5432' }}
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            POSTGRES_SSLMODE=${{ secrets.POSTGRES_SSLMODE || 'disable' }}
+            POSTGRES_MAX_OPEN_CONNS=${{ secrets.POSTGRES_MAX_OPEN_CONNS || '25' }}
+            POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS || '25' }}
+            POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME || '5m' }}
+            
+            # JWT
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN || '15m' }}
+            JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN || '168h' }}
+            
+            # Безопасность
+            PASSWORD_SALT=${{ secrets.PASSWORD_SALT }}
+            
+            # Лимиты запросов
+            RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS || '100' }}
+            RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION || '1m' }}
+            EOL
+            
+            # Загрузка docker-compose.yml
+            curl -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+            
+            # Остановка и перезапуск контейнеров
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
+            
+            # Очистка неиспользуемых образов
+            docker image prune -af 
