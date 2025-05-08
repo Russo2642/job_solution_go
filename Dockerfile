@@ -22,6 +22,9 @@ FROM alpine:latest
 # Установка необходимых пакетов для работы приложения
 RUN apk --no-cache add ca-certificates tzdata
 
+# Создание директории для миграций
+RUN mkdir -p /app/internal/db/migrations
+
 # Настройка рабочей директории
 WORKDIR /app
 

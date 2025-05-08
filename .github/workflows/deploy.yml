@@ -28,6 +28,24 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/job_solution:latest
 
+      - name: Prepare migrations and config files
+        run: |
+          mkdir -p deploy_files/internal/db
+          cp -r internal/db/migrations deploy_files/internal/db/
+          echo "version: '3.9'" > deploy_files/docker-compose.yml
+          cat docker-compose.yml >> deploy_files/docker-compose.yml
+
+      - name: Copy migrations to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "deploy_files/*"
+          target: "~"
+          strip_components: 1
+
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -43,9 +61,11 @@ jobs:
 
             # Создание .env файла
             cat > .env <<EOL
+            # Настройки сервера
             SERVER_PORT=${{ secrets.SERVER_PORT }}
             SERVER_MODE=${{ secrets.SERVER_MODE }}
 
+            # PostgreSQL
             POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
             POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
@@ -56,19 +76,35 @@ jobs:
             POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS }}
             POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME }}
 
+            # JWT
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
             JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
 
+            # Безопасность
             PASSWORD_SALT=${{ secrets.PASSWORD_SALT }}
 
+            # Лимиты запросов
             RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS }}
             RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION }}
+
+            # Docker Hub
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             EOL
 
-            # Получение docker-compose.yml с нужным образом
-            curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+            # Перемещаем всё из домашней директории в job_solution
+            if [ -d ~/internal ]; then
+              cp -r ~/internal .
+              rm -rf ~/internal
+            fi
 
+            # Проверка наличия директории с миграциями
+            if [ ! -d "internal/db/migrations" ]; then
+              echo "Error: Migrations directory does not exist!"
+              exit 1
+            fi
+
+            # Запуск контейнеров
             docker compose pull
             docker compose down
             docker compose up -d

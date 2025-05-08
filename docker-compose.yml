@@ -1,6 +1,8 @@
+version: '3.9'
+
 services:
   app:
-    image: russo2642/job_solution:latest
+    image: ${DOCKER_USERNAME:-russo2642}/job_solution:latest
     container_name: job_solution_app
     restart: unless-stopped
     ports:
