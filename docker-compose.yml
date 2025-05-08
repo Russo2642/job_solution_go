@@ -2,9 +2,10 @@ version: '3.9'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    image: russo2642/job_solution:latest
     container_name: job_solution_app
     restart: unless-stopped
     ports:
