@@ -1,33 +1,28 @@
-version: '3.9'
-
 services:
   app:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     image: russo2642/job_solution:latest
     container_name: job_solution_app
     restart: unless-stopped
     ports:
       - "${SERVER_PORT:-8080}:8080"
     environment:
-      - SERVER_PORT=${SERVER_PORT:-8080}
-      - SERVER_MODE=${SERVER_MODE:-production}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_SSLMODE=${POSTGRES_SSLMODE:-disable}
-      - POSTGRES_MAX_OPEN_CONNS=${POSTGRES_MAX_OPEN_CONNS:-25}
-      - POSTGRES_MAX_IDLE_CONNS=${POSTGRES_MAX_IDLE_CONNS:-25}
-      - POSTGRES_CONN_MAX_LIFETIME=${POSTGRES_CONN_MAX_LIFETIME:-5m}
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-15m}
-      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN:-168h}
-      - PASSWORD_SALT=${PASSWORD_SALT}
-      - RATE_LIMIT_REQUESTS=${RATE_LIMIT_REQUESTS:-100}
-      - RATE_LIMIT_DURATION=${RATE_LIMIT_DURATION:-1m}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      SERVER_MODE: ${SERVER_MODE:-production}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_SSLMODE: ${POSTGRES_SSLMODE:-disable}
+      POSTGRES_MAX_OPEN_CONNS: ${POSTGRES_MAX_OPEN_CONNS:-25}
+      POSTGRES_MAX_IDLE_CONNS: ${POSTGRES_MAX_IDLE_CONNS:-25}
+      POSTGRES_CONN_MAX_LIFETIME: ${POSTGRES_CONN_MAX_LIFETIME:-5m}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-168h}
+      PASSWORD_SALT: ${PASSWORD_SALT}
+      RATE_LIMIT_REQUESTS: ${RATE_LIMIT_REQUESTS:-100}
+      RATE_LIMIT_DURATION: ${RATE_LIMIT_DURATION:-1m}
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,9 +34,9 @@ services:
     container_name: job_solution_postgres
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -53,4 +48,4 @@ services:
       retries: 5
 
 volumes:
-  postgres_data: 
+  postgres_data:

@@ -36,46 +36,41 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e
+
             mkdir -p ~/job_solution
             cd ~/job_solution
-            
-            # Создание .env файла с секретами
-            cat > .env << EOL
-            # Настройки сервера
-            SERVER_PORT=${{ secrets.SERVER_PORT || '8080' }}
-            SERVER_MODE=${{ secrets.SERVER_MODE || 'production' }}
-            
-            # PostgreSQL
+
+            # Создание .env файла
+            cat > .env <<EOL
+            SERVER_PORT=${{ secrets.SERVER_PORT }}
+            SERVER_MODE=${{ secrets.SERVER_MODE }}
+
             POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
-            POSTGRES_PORT=${{ secrets.POSTGRES_PORT || '5432' }}
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
             POSTGRES_USER=${{ secrets.POSTGRES_USER }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            POSTGRES_SSLMODE=${{ secrets.POSTGRES_SSLMODE || 'disable' }}
-            POSTGRES_MAX_OPEN_CONNS=${{ secrets.POSTGRES_MAX_OPEN_CONNS || '25' }}
-            POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS || '25' }}
-            POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME || '5m' }}
-            
-            # JWT
+            POSTGRES_SSLMODE=${{ secrets.POSTGRES_SSLMODE }}
+            POSTGRES_MAX_OPEN_CONNS=${{ secrets.POSTGRES_MAX_OPEN_CONNS }}
+            POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS }}
+            POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME }}
+
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN || '15m' }}
-            JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN || '168h' }}
-            
-            # Безопасность
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+            JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
+
             PASSWORD_SALT=${{ secrets.PASSWORD_SALT }}
-            
-            # Лимиты запросов
-            RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS || '100' }}
-            RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION || '1m' }}
+
+            RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS }}
+            RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION }}
             EOL
-            
-            # Загрузка docker-compose.yml
-            curl -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
-            
-            # Остановка и перезапуск контейнеров
-            docker-compose pull
-            docker-compose down
-            docker-compose up -d
-            
-            # Очистка неиспользуемых образов
-            docker image prune -af 
+
+            # Получение docker-compose.yml с нужным образом
+            curl -fsSL -o docker-compose.yml https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.yml
+
+            docker compose pull
+            docker compose down
+            docker compose up -d
+
+            docker image prune -af
