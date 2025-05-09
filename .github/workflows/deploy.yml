@@ -41,6 +41,14 @@ jobs:
             cp nginx.conf deploy_files/
           fi
           
+          # Копируем скрипт для инициализации SSL-сертификатов
+          if [ -f "init-letsencrypt.sh" ]; then
+            cp init-letsencrypt.sh deploy_files/
+            chmod +x deploy_files/init-letsencrypt.sh
+            # Обновляем email в скрипте
+            sed -i "s/your-real-email@example.com/${{ secrets.SSL_EMAIL }}/g" deploy_files/init-letsencrypt.sh
+          fi
+          
           # Создаем директории для миграций
           mkdir -p deploy_files/internal/db/migrations
           
@@ -85,6 +93,12 @@ jobs:
               cp ~/temp_deploy/docker-compose.yml ./docker-compose.yml
               if [ -f ~/temp_deploy/nginx.conf ]; then
                 cp ~/temp_deploy/nginx.conf ./nginx.conf
+              fi
+              
+              # Копируем скрипт для SSL
+              if [ -f ~/temp_deploy/init-letsencrypt.sh ]; then
+                cp ~/temp_deploy/init-letsencrypt.sh ./init-letsencrypt.sh
+                chmod +x ./init-letsencrypt.sh
               fi
               
               # Копируем миграции с правильными правами
@@ -167,6 +181,70 @@ jobs:
             echo "Запуск новых контейнеров..."
             docker-compose up -d
 
+            # Настройка SSL-сертификатов, если скрипт существует и не было ранее настроенных сертификатов
+            if [ -f "./init-letsencrypt.sh" ] && [ ! -d "certbot/conf/live" ]; then
+              echo "Запуск настройки SSL-сертификатов..."
+              ./init-letsencrypt.sh
+              
+              # Активация HTTPS конфигурации в nginx.conf, если сертификаты были успешно получены
+              if [ -d "certbot/conf/live" ]; then
+                echo "Активация HTTPS конфигурации..."
+                cp nginx.conf nginx.conf.backup
+                sed -i 's/# server {/server {/g' nginx.conf
+                sed -i 's/# listen 443 ssl;/listen 443 ssl;/g' nginx.conf
+                sed -i 's/# listen \[::]:443 ssl;/listen [::]:443 ssl;/g' nginx.conf
+                sed -i 's/# server_name/server_name/g' nginx.conf
+                sed -i 's/# ssl_certificate/ssl_certificate/g' nginx.conf
+                sed -i 's/# ssl_certificate_key/ssl_certificate_key/g' nginx.conf
+                sed -i 's/# ssl_protocols/ssl_protocols/g' nginx.conf
+                sed -i 's/# ssl_prefer_server_ciphers/ssl_prefer_server_ciphers/g' nginx.conf
+                sed -i 's/# ssl_ciphers/ssl_ciphers/g' nginx.conf
+                sed -i 's/# ssl_session_cache/ssl_session_cache/g' nginx.conf
+                sed -i 's/# ssl_session_timeout/ssl_session_timeout/g' nginx.conf
+                sed -i 's/# ssl_stapling/ssl_stapling/g' nginx.conf
+                sed -i 's/# ssl_stapling_verify/ssl_stapling_verify/g' nginx.conf
+                sed -i 's/# root/root/g' nginx.conf
+                sed -i 's/# index/index/g' nginx.conf
+                sed -i 's/# gzip/gzip/g' nginx.conf
+                sed -i 's/# gzip_comp_level/gzip_comp_level/g' nginx.conf
+                sed -i 's/# gzip_min_length/gzip_min_length/g' nginx.conf
+                sed -i 's/# gzip_proxied/gzip_proxied/g' nginx.conf
+                sed -i 's/# gzip_vary/gzip_vary/g' nginx.conf
+                sed -i 's/# gzip_types/gzip_types/g' nginx.conf
+                sed -i 's/#         application\/javascript/        application\/javascript/g' nginx.conf
+                sed -i 's/#         application\/json/        application\/json/g' nginx.conf
+                sed -i 's/#         application\/xml/        application\/xml/g' nginx.conf
+                sed -i 's/#         application\/xml+rss/        application\/xml+rss/g' nginx.conf
+                sed -i 's/#         image\/svg+xml/        image\/svg+xml/g' nginx.conf
+                sed -i 's/#         text\/css/        text\/css/g' nginx.conf
+                sed -i 's/#         text\/javascript/        text\/javascript/g' nginx.conf
+                sed -i 's/#         text\/plain/        text\/plain/g' nginx.conf
+                sed -i 's/#         text\/xml;/        text\/xml;/g' nginx.conf
+                sed -i 's/# location \/api\//location \/api\//g' nginx.conf
+                sed -i 's/#         proxy_pass/        proxy_pass/g' nginx.conf
+                sed -i 's/#         proxy_http_version/        proxy_http_version/g' nginx.conf
+                sed -i 's/#         proxy_set_header Upgrade/        proxy_set_header Upgrade/g' nginx.conf
+                sed -i 's/#         proxy_set_header Connection/        proxy_set_header Connection/g' nginx.conf
+                sed -i 's/#         proxy_set_header Host/        proxy_set_header Host/g' nginx.conf
+                sed -i 's/#         proxy_set_header X-Real-IP/        proxy_set_header X-Real-IP/g' nginx.conf
+                sed -i 's/#         proxy_set_header X-Forwarded-For/        proxy_set_header X-Forwarded-For/g' nginx.conf
+                sed -i 's/#         proxy_set_header X-Forwarded-Proto/        proxy_set_header X-Forwarded-Proto/g' nginx.conf
+                sed -i 's/#         proxy_cache_bypass/        proxy_cache_bypass/g' nginx.conf
+                sed -i 's/# location \//location \//g' nginx.conf
+                sed -i 's/# location ~\* \\\.(?:ico|css|js|gif|jpe\?g|png|svg|woff|woff2|ttf|eot)\$/location ~* \\\.(?:ico|css|js|gif|jpe?g|png|svg|woff|woff2|ttf|eot)\$/g' nginx.conf
+                sed -i 's/#         expires 30d;/        expires 30d;/g' nginx.conf
+                sed -i 's/#         add_header Cache-Control/        add_header Cache-Control/g' nginx.conf
+                sed -i 's/# location ~\* \\\.html\$/location ~* \\\.html\$/g' nginx.conf
+                sed -i 's/#         expires -1;/        expires -1;/g' nginx.conf
+                
+                # Перезапуск Nginx для применения изменений
+                docker-compose restart nginx
+                echo "HTTPS настроен и активирован!"
+              else
+                echo "Не удалось активировать HTTPS - сертификаты не были получены."
+              fi
+            fi
+            
             # Очистка неиспользуемых образов
             docker image prune -af
             
