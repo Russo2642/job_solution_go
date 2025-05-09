@@ -2,9 +2,7 @@ version: '3.9'
 
 services:
   frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKER_USERNAME:-russo2642}/job_solution_frontend:latest
     container_name: job_solution_frontend
     restart: unless-stopped
     depends_on:
