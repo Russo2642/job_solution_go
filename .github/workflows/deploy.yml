@@ -34,6 +34,7 @@ jobs:
           cp -r internal/db/migrations deploy_files/internal/db/
           echo "version: '3.9'" > deploy_files/docker-compose.yml
           cat docker-compose.yml >> deploy_files/docker-compose.yml
+          cp nginx.conf deploy_files/
 
       - name: Copy migrations to server
         uses: appleboy/scp-action@master
@@ -56,8 +57,7 @@ jobs:
           script: |
             set -e
 
-            mkdir -p ~/job_solution
-            cd ~/job_solution
+            cd ~
 
             # Создание .env файла
             cat > .env <<EOL
@@ -113,9 +113,12 @@ jobs:
               exit 1
             fi
 
+            # Создаем директории для сертботa, если нужно
+            mkdir -p certbot/conf certbot/www
+            
             # Запуск контейнеров
-            docker compose pull
-            docker compose down
-            docker compose up -d
+            docker-compose pull
+            docker-compose down
+            docker-compose up -d
 
             docker image prune -af
