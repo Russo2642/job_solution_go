@@ -149,9 +149,22 @@ jobs:
               ls -la internal/db/migrations
             fi
 
-            # Запуск контейнеров
+            # Принудительная остановка всех старых контейнеров
+            echo "Остановка всех старых контейнеров..."
+            docker-compose down || true
+            
+            # Проверка на наличие "зависших" контейнеров и их удаление
+            if docker ps -a | grep "job_solution_"; then
+              echo "Обнаружены старые контейнеры, удаляем их принудительно..."
+              docker ps -a | grep "job_solution_" | awk '{print $1}' | xargs -r docker rm -f
+            fi
+            
+            # Загрузка образов
+            echo "Загрузка новых образов..."
             docker-compose pull
-            docker-compose down
+
+            # Запуск новых контейнеров
+            echo "Запуск новых контейнеров..."
             docker-compose up -d
 
             # Очистка неиспользуемых образов
