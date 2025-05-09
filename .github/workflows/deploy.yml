@@ -28,15 +28,31 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/job_solution:latest
 
-      - name: Prepare migrations and config files
+      - name: Prepare deployment files
         run: |
-          mkdir -p deploy_files/internal/db
-          cp -r internal/db/migrations deploy_files/internal/db/
-          echo "version: '3.9'" > deploy_files/docker-compose.yml
-          cat docker-compose.yml >> deploy_files/docker-compose.yml
-          cp nginx.conf deploy_files/
+          # Создаем временную директорию для файлов деплоя
+          mkdir -p deploy_files
+          
+          # Копируем docker-compose.yml
+          cp docker-compose.yml deploy_files/
+          
+          # Копируем nginx.conf если он есть
+          if [ -f "nginx.conf" ]; then
+            cp nginx.conf deploy_files/
+          fi
+          
+          # Создаем директории для миграций
+          mkdir -p deploy_files/internal/db/migrations
+          
+          # Копируем файлы миграций
+          cp -r internal/db/migrations/* deploy_files/internal/db/migrations/
+          
+          # Для проверки выводим список файлов
+          echo "Файлы для деплоя:"
+          ls -la deploy_files/
+          ls -la deploy_files/internal/db/migrations/
 
-      - name: Copy migrations to server
+      - name: Copy deployment files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -44,7 +60,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           source: "deploy_files/*"
-          target: "~"
+          target: "/home/${{ secrets.SERVER_USER }}/temp_deploy"
           strip_components: 1
 
       - name: Deploy to server
@@ -58,6 +74,37 @@ jobs:
             set -e
 
             cd ~
+            
+            # Создаём директории если они не существуют
+            mkdir -p internal/db/migrations
+            mkdir -p certbot/conf certbot/www
+            
+            # Копируем файлы из временной директории деплоя
+            if [ -d ~/temp_deploy ]; then
+              # Копируем docker-compose.yml и nginx.conf
+              cp ~/temp_deploy/docker-compose.yml ./docker-compose.yml
+              if [ -f ~/temp_deploy/nginx.conf ]; then
+                cp ~/temp_deploy/nginx.conf ./nginx.conf
+              fi
+              
+              # Копируем миграции с правильными правами
+              if [ -d ~/temp_deploy/internal/db/migrations ]; then
+                echo "Копирование миграций..."
+                sudo cp -r ~/temp_deploy/internal/db/migrations/* ./internal/db/migrations/
+                # Настраиваем права доступа
+                sudo chmod -R 777 ./internal/db
+                sudo chown -R $(whoami):$(whoami) ./internal
+              else
+                echo "ПРЕДУПРЕЖДЕНИЕ: Миграции не найдены в директории temp_deploy!"
+                ls -la ~/temp_deploy
+              fi
+              
+              # Удаляем временную директорию
+              rm -rf ~/temp_deploy
+            else
+              echo "ОШИБКА: Директория temp_deploy не найдена!"
+              exit 1
+            fi
 
             # Создание .env файла
             cat > .env <<EOL
@@ -92,33 +139,24 @@ jobs:
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             EOL
 
-            # Создание директории с правильными правами доступа
-            sudo mkdir -p internal/db/migrations
-            sudo rm -rf internal/db/migrations/*  # Удаляем старые миграции если они есть
-            
-            # Копируем файлы миграций с правильными правами доступа
-            if [ -d ~/internal/db/migrations ]; then
-              sudo cp -r ~/internal/db/migrations/* internal/db/migrations/
-              # Устанавливаем правильные права доступа
-              sudo chmod -R 777 internal/db
-              # Изменяем владельца директории на текущего пользователя
-              sudo chown -R $(whoami):$(whoami) internal
-              # Удаляем лишние файлы
-              sudo rm -rf ~/internal
-            fi
-
             # Проверка наличия директории с миграциями
             if [ ! -d "internal/db/migrations" ] || [ -z "$(ls -A internal/db/migrations)" ]; then
-              echo "Error: Migrations directory is empty or does not exist!"
-              exit 1
+              echo "ПРЕДУПРЕЖДЕНИЕ: Директория миграций пуста или не существует!"
+              echo "Попытка создать структуру..."
+              mkdir -p internal/db/migrations
+            else
+              echo "Директория миграций существует и содержит файлы:"
+              ls -la internal/db/migrations
             fi
 
-            # Создаем директории для сертботa, если нужно
-            mkdir -p certbot/conf certbot/www
-            
             # Запуск контейнеров
             docker-compose pull
             docker-compose down
             docker-compose up -d
 
+            # Очистка неиспользуемых образов
             docker image prune -af
+            
+            # Отображение статуса
+            echo "Статус контейнеров:"
+            docker-compose ps
