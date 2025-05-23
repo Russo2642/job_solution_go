@@ -26,6 +26,7 @@ type Review struct {
 	Pros               string         `json:"pros" db:"pros"`
 	Cons               string         `json:"cons" db:"cons"`
 	IsFormerEmployee   bool           `json:"is_former_employee" db:"is_former_employee"`
+	IsRecommended      bool           `json:"is_recommended" db:"is_recommended"`
 	Status             ReviewStatus   `json:"status" db:"status"`
 	ModerationComment  sql.NullString `json:"moderation_comment,omitempty" db:"moderation_comment"`
 	UsefulCount        int            `json:"useful_count" db:"useful_count"`
@@ -90,6 +91,7 @@ type ReviewInput struct {
 	Cons               string          `json:"cons" binding:"required,min=10"`
 	BenefitTypeIDs     []int           `json:"benefit_type_ids" binding:"omitempty,dive,min=1"`
 	IsFormerEmployee   bool            `json:"is_former_employee"`
+	IsRecommended      bool            `json:"is_recommended"`
 }
 
 type ReviewFilter struct {
@@ -138,6 +140,7 @@ func NewReview(userID int, input ReviewInput) *Review {
 		Pros:               input.Pros,
 		Cons:               input.Cons,
 		IsFormerEmployee:   input.IsFormerEmployee,
+		IsRecommended:      input.IsRecommended,
 		Status:             ReviewStatusPending,
 		UsefulCount:        0,
 		CreatedAt:          now,

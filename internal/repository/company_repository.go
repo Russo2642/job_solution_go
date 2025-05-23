@@ -69,7 +69,7 @@ func (r *CompanyRepositoryImpl) Create(ctx context.Context, company *models.Comp
 func (r *CompanyRepositoryImpl) GetByID(ctx context.Context, id int) (*models.CompanyWithRatings, error) {
 	query := `
 		SELECT id, name, slug, size, logo, website, email, phone, address, city_id,
-		       reviews_count, average_rating, created_at, updated_at
+		       reviews_count, average_rating, recommendation_percentage, created_at, updated_at
 		FROM companies 
 		WHERE id = $1
 	`
@@ -114,7 +114,7 @@ func (r *CompanyRepositoryImpl) GetByID(ctx context.Context, id int) (*models.Co
 func (r *CompanyRepositoryImpl) GetBySlug(ctx context.Context, slug string) (*models.CompanyWithRatings, error) {
 	query := `
 		SELECT id, name, slug, size, logo, website, email, phone, address, city_id,
-		       reviews_count, average_rating, created_at, updated_at
+		       reviews_count, average_rating, recommendation_percentage, created_at, updated_at
 		FROM companies 
 		WHERE slug = $1
 	`
@@ -158,8 +158,8 @@ func (r *CompanyRepositoryImpl) GetBySlug(ctx context.Context, slug string) (*mo
 
 func (r *CompanyRepositoryImpl) GetByName(ctx context.Context, name string) (*models.Company, error) {
 	query := `
-		SELECT id, name, size, logo, website, email, phone, address, 
-		       reviews_count, average_rating, created_at, updated_at
+		SELECT id, name, slug, size, logo, website, email, phone, address, city_id,
+		       reviews_count, average_rating, recommendation_percentage, created_at, updated_at
 		FROM companies 
 		WHERE name = $1
 	`
@@ -180,8 +180,8 @@ func (r *CompanyRepositoryImpl) Update(ctx context.Context, company *models.Comp
 	query := `
 		UPDATE companies
 		SET name = $1, slug = $2, size = $3, logo = $4, website = $5, email = $6, phone = $7, address = $8, 
-		    city_id = $9, reviews_count = $10, average_rating = $11, updated_at = $12
-		WHERE id = $13
+		    city_id = $9, reviews_count = $10, average_rating = $11, recommendation_percentage = $12, updated_at = $13
+		WHERE id = $14
 	`
 
 	_, err := r.postgres.ExecContext(
@@ -198,6 +198,7 @@ func (r *CompanyRepositoryImpl) Update(ctx context.Context, company *models.Comp
 		company.CityID,
 		company.ReviewsCount,
 		company.AverageRating,
+		company.RecommendationPercent,
 		company.UpdatedAt,
 		company.ID,
 	)
@@ -313,7 +314,7 @@ func (r *CompanyRepositoryImpl) GetAll(ctx context.Context, filter models.Compan
 
 	dataQuery := fmt.Sprintf(`
 		SELECT c.id, c.name, c.slug, c.size, c.logo, c.website, c.email, c.phone, c.address, c.city_id,
-		       c.reviews_count, c.average_rating, c.created_at, c.updated_at
+		       c.reviews_count, c.average_rating, c.recommendation_percentage, c.created_at, c.updated_at
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -386,6 +387,11 @@ func (r *CompanyRepositoryImpl) UpdateRating(ctx context.Context, companyID int)
 			FROM reviews
 			WHERE company_id = $1 AND status = 'approved'
 		),
+		recommendation_percentage = COALESCE((
+			SELECT (SUM(CASE WHEN is_recommended THEN 1 ELSE 0 END) * 100.0 / COUNT(*))
+			FROM reviews
+			WHERE company_id = $1 AND status = 'approved'
+		), 0),
 		updated_at = NOW()
 		WHERE id = $1
 	`

@@ -30,9 +30,9 @@ func (r *ReviewRepositoryImpl) Create(ctx context.Context, review *models.Review
 
 	query := `
 		INSERT INTO reviews 
-		(user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating, pros, cons, is_former_employee, status, created_at, updated_at)
+		(user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating, pros, cons, is_former_employee, is_recommended, status, created_at, updated_at)
 		VALUES 
-		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id
 	`
 
@@ -49,6 +49,7 @@ func (r *ReviewRepositoryImpl) Create(ctx context.Context, review *models.Review
 		review.Pros,
 		review.Cons,
 		review.IsFormerEmployee,
+		review.IsRecommended,
 		review.Status,
 		review.CreatedAt,
 		review.UpdatedAt,
@@ -68,7 +69,7 @@ func (r *ReviewRepositoryImpl) Create(ctx context.Context, review *models.Review
 func (r *ReviewRepositoryImpl) GetByID(ctx context.Context, id int) (*models.ReviewWithDetails, error) {
 	query := `
 		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id,
-		       city_id, rating, pros, cons, is_former_employee, status, moderation_comment, 
+		       city_id, rating, pros, cons, is_former_employee, is_recommended, status, moderation_comment, 
 		       useful_count, created_at, updated_at, approved_at
 		FROM reviews
 		WHERE id = $1
@@ -248,7 +249,7 @@ func (r *ReviewRepositoryImpl) getReviews(ctx context.Context, filter models.Rev
 
 	dataQuery := fmt.Sprintf(`
 		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating,
-		       pros, cons, is_former_employee, status, moderation_comment, useful_count, created_at, updated_at, approved_at
+		       pros, cons, is_former_employee, is_recommended, status, moderation_comment, useful_count, created_at, updated_at, approved_at
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -392,7 +393,7 @@ func (r *ReviewRepositoryImpl) GetByUser(ctx context.Context, userID int, filter
 
 	dataQuery := fmt.Sprintf(`
 		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating,
-		       pros, cons, is_former_employee, status, moderation_comment, useful_count, created_at, updated_at, approved_at
+		       pros, cons, is_former_employee, is_recommended, status, moderation_comment, useful_count, created_at, updated_at, approved_at
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -524,7 +525,7 @@ func (r *ReviewRepositoryImpl) GetPending(ctx context.Context, filter models.Rev
 
 	dataQuery := fmt.Sprintf(`
 		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating,
-		       pros, cons, is_former_employee, status, moderation_comment, useful_count, created_at, updated_at, approved_at
+		       pros, cons, is_former_employee, is_recommended, status, moderation_comment, useful_count, created_at, updated_at, approved_at
 		%s
 		ORDER BY %s %s
 		LIMIT $%d OFFSET $%d
@@ -610,8 +611,8 @@ func (r *ReviewRepositoryImpl) Update(ctx context.Context, review *models.Review
 	query := `
 		UPDATE reviews
 		SET position = $1, employment_type_id = $2, employment_period_id = $3, city_id = $4, rating = $5,
-		    pros = $6, cons = $7, is_former_employee = $8, status = $9, moderation_comment = $10, updated_at = $11, approved_at = $12
-		WHERE id = $13
+		    pros = $6, cons = $7, is_former_employee = $8, is_recommended = $9, status = $10, moderation_comment = $11, updated_at = $12, approved_at = $13
+		WHERE id = $14
 	`
 
 	_, err := r.postgres.ExecContext(
@@ -625,6 +626,7 @@ func (r *ReviewRepositoryImpl) Update(ctx context.Context, review *models.Review
 		review.Pros,
 		review.Cons,
 		review.IsFormerEmployee,
+		review.IsRecommended,
 		review.Status,
 		review.ModerationComment,
 		review.UpdatedAt,

@@ -5,20 +5,21 @@ import (
 )
 
 type Company struct {
-	ID            int       `json:"id" db:"id"`
-	Name          string    `json:"name" db:"name"`
-	Slug          string    `json:"slug" db:"slug"`
-	Size          string    `json:"size" db:"size"`
-	Logo          string    `json:"logo,omitempty" db:"logo"`
-	Website       string    `json:"website,omitempty" db:"website"`
-	Email         string    `json:"email,omitempty" db:"email"`
-	Phone         string    `json:"phone,omitempty" db:"phone"`
-	Address       string    `json:"address,omitempty" db:"address"`
-	CityID        *int      `json:"city_id,omitempty" db:"city_id"`
-	ReviewsCount  int       `json:"reviews_count" db:"reviews_count"`
-	AverageRating float64   `json:"average_rating" db:"average_rating"`
-	CreatedAt     time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at" db:"updated_at"`
+	ID                    int       `json:"id" db:"id"`
+	Name                  string    `json:"name" db:"name"`
+	Slug                  string    `json:"slug" db:"slug"`
+	Size                  string    `json:"size" db:"size"`
+	Logo                  string    `json:"logo,omitempty" db:"logo"`
+	Website               string    `json:"website,omitempty" db:"website"`
+	Email                 string    `json:"email,omitempty" db:"email"`
+	Phone                 string    `json:"phone,omitempty" db:"phone"`
+	Address               string    `json:"address,omitempty" db:"address"`
+	CityID                *int      `json:"city_id,omitempty" db:"city_id"`
+	ReviewsCount          int       `json:"reviews_count" db:"reviews_count"`
+	AverageRating         float64   `json:"average_rating" db:"average_rating"`
+	RecommendationPercent float64   `json:"recommendation_percentage" db:"recommendation_percentage"`
+	CreatedAt             time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt             time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type CompanyCategoryRating struct {

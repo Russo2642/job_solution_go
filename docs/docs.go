@@ -2007,6 +2007,9 @@ const docTemplate = `{
                 "is_former_employee": {
                     "type": "boolean"
                 },
+                "is_recommended": {
+                    "type": "boolean"
+                },
                 "position": {
                     "type": "string",
                     "maxLength": 100,

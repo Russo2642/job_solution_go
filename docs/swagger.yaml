@@ -93,6 +93,8 @@ definitions:
         type: integer
       is_former_employee:
         type: boolean
+      is_recommended:
+        type: boolean
       position:
         maxLength: 100
         minLength: 2
