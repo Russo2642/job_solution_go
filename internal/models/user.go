@@ -10,9 +10,9 @@ import (
 type UserRole string
 
 const (
-	RoleUser UserRole = "user"
+	RoleUser      UserRole = "user"
 	RoleModerator UserRole = "moderator"
-	RoleAdmin UserRole = "admin"
+	RoleAdmin     UserRole = "admin"
 )
 
 type User struct {
@@ -33,6 +33,7 @@ type UserProfile struct {
 	Phone     string    `json:"phone,omitempty"`
 	FirstName string    `json:"first_name,omitempty"`
 	LastName  string    `json:"last_name,omitempty"`
+	Role      UserRole  `json:"role"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -114,6 +115,7 @@ func (u *User) ToProfile() UserProfile {
 		Phone:     u.Phone,
 		FirstName: u.FirstName,
 		LastName:  u.LastName,
+		Role:      u.Role,
 		CreatedAt: u.CreatedAt,
 	}
 }
