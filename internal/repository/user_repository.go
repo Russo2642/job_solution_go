@@ -115,15 +115,56 @@ func (r *UserRepositoryImpl) Update(ctx context.Context, user *models.User) erro
 }
 
 func (r *UserRepositoryImpl) Delete(ctx context.Context, id int) error {
-	query := `
-		DELETE FROM users
-		WHERE id = $1
-	`
-
+	query := "DELETE FROM users WHERE id = $1"
 	_, err := r.postgres.ExecContext(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("ошибка при удалении пользователя: %w", err)
 	}
-
 	return nil
+}
+
+func (r *UserRepositoryImpl) Count(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM users"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете пользователей: %w", err)
+	}
+	return count, nil
+}
+
+func (r *UserRepositoryImpl) CountByRole(ctx context.Context, role models.UserRole) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM users WHERE role = $1"
+	err := r.postgres.GetContext(ctx, &count, query, role)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете пользователей по роли: %w", err)
+	}
+	return count, nil
+}
+
+func (r *UserRepositoryImpl) GetAll(ctx context.Context, page, limit int) ([]models.User, int, error) {
+	var total int
+	countQuery := "SELECT COUNT(*) FROM users"
+	err := r.postgres.GetContext(ctx, &total, countQuery)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при подсчете пользователей: %w", err)
+	}
+
+	offset := (page - 1) * limit
+
+	query := `
+		SELECT id, email, phone, password_hash, first_name, last_name, role, created_at, updated_at
+		FROM users
+		ORDER BY id
+		LIMIT $1 OFFSET $2
+	`
+
+	var users []models.User
+	err = r.postgres.SelectContext(ctx, &users, query, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при получении пользователей: %w", err)
+	}
+
+	return users, total, nil
 }

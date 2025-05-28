@@ -29,7 +29,6 @@ func NewAuthHandler(repo *repository.Repository, cfg *config.Config) *AuthHandle
 	}
 }
 
-// Register обрабатывает запрос на регистрацию нового пользователя
 // @Summary Регистрация нового пользователя
 // @Description Регистрирует нового пользователя
 // @Tags auth
@@ -98,7 +97,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
-// Login обрабатывает запрос на вход в систему
 // @Summary Вход в систему
 // @Description Аутентифицирует пользователя и выдает токены
 // @Tags auth
@@ -150,7 +148,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// RefreshToken обрабатывает запрос на обновление токенов
 // @Summary Обновление токенов
 // @Description Обновляет пару access/refresh токенов
 // @Tags auth
@@ -215,7 +212,6 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
-// Logout обрабатывает запрос на выход из системы
 // @Summary Выход из системы
 // @Description Выход из системы, удаление refresh токена
 // @Tags auth
@@ -246,7 +242,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	})
 }
 
-// ForgotPassword обрабатывает запрос на восстановление пароля
 // @Summary Восстановление пароля
 // @Description Отправляет запрос на восстановление пароля и создает токен для сброса
 // @Tags auth
@@ -289,7 +284,6 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	})
 }
 
-// ResetPassword обрабатывает запрос на сброс пароля
 // @Summary Сброс пароля
 // @Description Сбрасывает пароль пользователя по токену
 // @Tags auth

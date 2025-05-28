@@ -3,7 +3,7 @@ version: '3.9'
 services:
   frontend:
     image: ${DOCKER_USERNAME:-russo2642}/job_solution_frontend:latest
-    container_name: job_solution_frontend
+    container_name: frontend
     restart: unless-stopped
     depends_on:
       - app
@@ -12,9 +12,9 @@ services:
     networks:
       - app_network
 
-  app:
+  backen:
     image: ${DOCKER_USERNAME:-russo2642}/job_solution:latest
-    container_name: job_solution_app
+    container_name: backend
     restart: unless-stopped
     ports:
       - "${SERVER_PORT:-8080}:8080"
@@ -44,7 +44,7 @@ services:
 
   postgres:
     image: postgres:16-alpine
-    container_name: job_solution_postgres
+    container_name: postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -64,7 +64,7 @@ services:
 
   nginx:
     image: nginx:stable-alpine
-    container_name: job_solution_nginx
+    container_name: nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -83,7 +83,7 @@ services:
   
   certbot:
     image: certbot/certbot
-    container_name: job_solution_certbot
+    container_name: certbot
     restart: unless-stopped
     volumes:
       - ./certbot/conf:/etc/letsencrypt

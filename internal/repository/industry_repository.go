@@ -184,22 +184,107 @@ func (r *IndustryRepositoryImpl) RemoveCompanyIndustry(ctx context.Context, comp
 func (r *IndustryRepositoryImpl) UpdateColor(ctx context.Context, id int, color string) error {
 	query := `
 		UPDATE industries
-		SET color = $1
+		SET color = $1, updated_at = NOW()
 		WHERE id = $2
 	`
 
-	result, err := r.postgres.ExecContext(ctx, query, color, id)
+	_, err := r.postgres.ExecContext(ctx, query, color, id)
 	if err != nil {
-		return fmt.Errorf("ошибка при обновлении цвета отрасли: %w", err)
+		return fmt.Errorf("ошибка при обновлении цвета индустрии: %w", err)
 	}
 
-	rowsAffected, err := result.RowsAffected()
+	return nil
+}
+
+func (r *IndustryRepositoryImpl) Count(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM industries"
+	err := r.postgres.GetContext(ctx, &count, query)
 	if err != nil {
-		return fmt.Errorf("ошибка при получении количества измененных строк: %w", err)
+		return 0, fmt.Errorf("ошибка при подсчете индустрий: %w", err)
+	}
+	return count, nil
+}
+
+func (r *IndustryRepositoryImpl) GetByName(ctx context.Context, name string) (*models.Industry, error) {
+	query := `
+		SELECT id, name, color
+		FROM industries 
+		WHERE name = $1
+	`
+
+	var industry models.Industry
+	err := r.postgres.GetContext(ctx, &industry, query, name)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("индустрия не найдена")
+		}
+		return nil, fmt.Errorf("ошибка при получении индустрии по имени: %w", err)
 	}
 
-	if rowsAffected == 0 {
-		return fmt.Errorf("отрасль не найдена")
+	return &industry, nil
+}
+
+func (r *IndustryRepositoryImpl) Create(ctx context.Context, industry *models.Industry) (int, error) {
+	query := `
+		INSERT INTO industries (name, color, created_at, updated_at)
+		VALUES ($1, $2, NOW(), NOW())
+		RETURNING id
+	`
+
+	var id int
+	err := r.postgres.QueryRowContext(
+		ctx,
+		query,
+		industry.Name,
+		industry.Color,
+	).Scan(&id)
+
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при создании индустрии: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *IndustryRepositoryImpl) Update(ctx context.Context, industry *models.Industry) error {
+	query := `
+		UPDATE industries
+		SET name = $1, color = $2, updated_at = NOW()
+		WHERE id = $3
+	`
+
+	_, err := r.postgres.ExecContext(
+		ctx,
+		query,
+		industry.Name,
+		industry.Color,
+		industry.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("ошибка при обновлении индустрии: %w", err)
+	}
+
+	return nil
+}
+
+func (r *IndustryRepositoryImpl) Delete(ctx context.Context, id int) error {
+	var companyCount int
+	checkCompanyQuery := "SELECT COUNT(*) FROM company_industries WHERE industry_id = $1"
+	err := r.postgres.GetContext(ctx, &companyCount, checkCompanyQuery, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при проверке использования индустрии в компаниях: %w", err)
+	}
+
+	if companyCount > 0 {
+		return fmt.Errorf("индустрия используется в %d компаниях и не может быть удалена", companyCount)
+	}
+
+	query := "DELETE FROM industries WHERE id = $1"
+	_, err = r.postgres.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении индустрии: %w", err)
 	}
 
 	return nil

@@ -48,6 +48,18 @@ type CompanyInput struct {
 	Industries []int  `json:"industries" binding:"required,min=1,dive,min=1"`
 }
 
+type CompanyUpdateInput struct {
+	Name       *string `json:"name,omitempty" binding:"omitempty,min=2,max=255"`
+	Size       *string `json:"size,omitempty" binding:"omitempty,oneof=small medium large enterprise"`
+	Logo       *string `json:"logo,omitempty" binding:"omitempty,url"`
+	Website    *string `json:"website,omitempty" binding:"omitempty,url"`
+	Email      *string `json:"email,omitempty" binding:"omitempty,email"`
+	Phone      *string `json:"phone,omitempty" binding:"omitempty"`
+	Address    *string `json:"address,omitempty" binding:"omitempty"`
+	CityID     *int    `json:"city_id,omitempty" binding:"omitempty,min=1"`
+	Industries []int   `json:"industries,omitempty" binding:"omitempty,min=1,dive,min=1"`
+}
+
 type CompanyFilter struct {
 	Search     string   `form:"search" binding:"omitempty"`
 	Industries []int    `form:"industries" binding:"omitempty,dive,min=1"`

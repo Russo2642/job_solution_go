@@ -27,7 +27,6 @@ func NewReviewHandler(postgres *db.PostgreSQL, cfg *config.Config) *ReviewHandle
 	}
 }
 
-// CreateReview создает новый отзыв о компании
 // @Summary Создание отзыва
 // @Description Создает новый отзыв о компании
 // @Tags reviews
@@ -126,7 +125,6 @@ func (h *ReviewHandler) CreateReview(c *gin.Context) {
 	})
 }
 
-// GetReview возвращает отзыв по ID
 // @Summary Получение отзыва
 // @Description Возвращает отзыв по его ID
 // @Tags reviews
@@ -162,7 +160,6 @@ func (h *ReviewHandler) GetReview(c *gin.Context) {
 	utils.Response(c, http.StatusOK, review)
 }
 
-// GetCompanyReviews возвращает отзывы о компании
 // @Summary Отзывы о компании
 // @Description Возвращает список отзывов о компании
 // @Tags reviews
@@ -239,10 +236,9 @@ func (h *ReviewHandler) GetCompanyReviews(c *gin.Context) {
 	})
 }
 
-// GetPendingReviews возвращает отзывы, ожидающие модерации
 // @Summary Отзывы на модерации
 // @Description Возвращает список отзывов, ожидающих модерации
-// @Tags reviews
+// @Tags admin
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -252,7 +248,7 @@ func (h *ReviewHandler) GetCompanyReviews(c *gin.Context) {
 // @Failure 401 {object} utils.ErrorResponseDTO
 // @Failure 403 {object} utils.ErrorResponseDTO
 // @Failure 500 {object} utils.ErrorResponseDTO
-// @Router /reviews/moderation/pending [get]
+// @Router /admin/reviews/moderation/pending [get]
 func (h *ReviewHandler) GetPendingReviews(c *gin.Context) {
 	roleValue, exists := c.Get(middleware.RoleKey)
 	if !exists || (roleValue.(models.UserRole) != models.RoleModerator && roleValue.(models.UserRole) != models.RoleAdmin) {
@@ -299,10 +295,9 @@ func (h *ReviewHandler) GetPendingReviews(c *gin.Context) {
 	})
 }
 
-// ApproveReview одобряет отзыв
 // @Summary Одобрение отзыва
 // @Description Одобряет отзыв, прошедший модерацию
-// @Tags reviews
+// @Tags admin
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -314,7 +309,7 @@ func (h *ReviewHandler) GetPendingReviews(c *gin.Context) {
 // @Failure 403 {object} utils.ErrorResponseDTO
 // @Failure 404 {object} utils.ErrorResponseDTO
 // @Failure 500 {object} utils.ErrorResponseDTO
-// @Router /reviews/{id}/approve [put]
+// @Router /admin/reviews/{id}/approve [put]
 func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 	roleValue, exists := c.Get(middleware.RoleKey)
 	if !exists || (roleValue.(models.UserRole) != models.RoleModerator && roleValue.(models.UserRole) != models.RoleAdmin) {
@@ -381,10 +376,9 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 	})
 }
 
-// RejectReview отклоняет отзыв
 // @Summary Отклонение отзыва
 // @Description Отклоняет отзыв с указанием причины
-// @Tags reviews
+// @Tags admin
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -396,7 +390,7 @@ func (h *ReviewHandler) ApproveReview(c *gin.Context) {
 // @Failure 403 {object} utils.ErrorResponseDTO
 // @Failure 404 {object} utils.ErrorResponseDTO
 // @Failure 500 {object} utils.ErrorResponseDTO
-// @Router /reviews/{id}/reject [put]
+// @Router /admin/reviews/{id}/reject [put]
 func (h *ReviewHandler) RejectReview(c *gin.Context) {
 	roleValue, exists := c.Get(middleware.RoleKey)
 	if !exists || (roleValue.(models.UserRole) != models.RoleModerator && roleValue.(models.UserRole) != models.RoleAdmin) {
@@ -458,7 +452,6 @@ func (h *ReviewHandler) RejectReview(c *gin.Context) {
 	})
 }
 
-// MarkReviewAsUseful отмечает отзыв как полезный
 // @Summary Отметить отзыв как полезный
 // @Description Добавляет отметку "полезно" для отзыва
 // @Tags reviews
@@ -520,7 +513,6 @@ func (h *ReviewHandler) MarkReviewAsUseful(c *gin.Context) {
 	})
 }
 
-// RemoveUsefulMark удаляет отметку "полезно" с отзыва
 // @Summary Убрать отметку "полезно"
 // @Description Удаляет отметку "полезно" с отзыва
 // @Tags reviews

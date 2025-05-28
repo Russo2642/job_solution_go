@@ -5,6 +5,7 @@ import (
 	"job_solition/internal/db"
 	"job_solition/internal/handlers"
 	"job_solition/internal/middleware"
+	"job_solition/internal/models"
 	"job_solition/internal/repository"
 
 	"github.com/gin-gonic/gin"
@@ -50,8 +51,6 @@ func SetupCompanyRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *c
 	authorized := companies.Group("")
 	authorized.Use(middleware.OptionalAuth(cfg))
 	authorized.Use(middleware.RequireAuth())
-
-	authorized.POST("", companyHandler.CreateCompany)
 }
 
 func SetupReviewRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *config.Config) {
@@ -76,10 +75,6 @@ func SetupReviewRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *co
 	moderation := reviews.Group("")
 	moderation.Use(middleware.OptionalAuth(cfg))
 	moderation.Use(middleware.RequireAuth())
-
-	moderation.GET("/moderation/pending", reviewHandler.GetPendingReviews)
-	moderation.PUT("/:id/approve", reviewHandler.ApproveReview)
-	moderation.PUT("/:id/reject", reviewHandler.RejectReview)
 }
 
 func SetupCityRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *config.Config) {
@@ -147,6 +142,75 @@ func SetupEmploymentTypeRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL,
 	}
 }
 
+func SetupAdminRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *config.Config) {
+	repo := repository.NewRepository(postgres)
+	adminHandler := handlers.NewAdminHandler(repo, cfg)
+	companyHandler := handlers.NewCompanyHandler(postgres, cfg)
+	reviewHandler := handlers.NewReviewHandler(postgres, cfg)
+
+	admin := router.Group("/admin")
+	admin.Use(middleware.OptionalAuth(cfg))
+	admin.Use(middleware.RequireAuth())
+	admin.Use(middleware.RequireRoleMiddleware(models.RoleAdmin))
+
+	admin.GET("/statistics", adminHandler.GetStatistics)
+
+	admin.POST("/companies", companyHandler.CreateCompany)
+	admin.PUT("/companies/:id", companyHandler.UpdateCompany)
+	admin.DELETE("/companies/:id", companyHandler.DeleteCompany)
+
+	admin.GET("/users", adminHandler.GetUsers)
+	admin.GET("/users/:id", adminHandler.GetUser)
+	admin.PUT("/users/:id/role", adminHandler.UpdateUserRole)
+	admin.DELETE("/users/:id", adminHandler.DeleteUser)
+
+	admin.POST("/rating-categories", adminHandler.CreateRatingCategory)
+	admin.PUT("/rating-categories/:id", adminHandler.UpdateRatingCategory)
+	admin.DELETE("/rating-categories/:id", adminHandler.DeleteRatingCategory)
+
+	admin.PUT("/reviews/:id", adminHandler.UpdateReview)
+	admin.DELETE("/reviews/:id", adminHandler.DeleteReview)
+	admin.GET("/reviews/moderation/pending", reviewHandler.GetPendingReviews)
+	admin.PUT("/reviews/:id/approve", reviewHandler.ApproveReview)
+	admin.PUT("/reviews/:id/reject", reviewHandler.RejectReview)
+
+	admin.POST("/cities", adminHandler.CreateCity)
+	admin.PUT("/cities/:id", adminHandler.UpdateCity)
+	admin.DELETE("/cities/:id", adminHandler.DeleteCity)
+
+	admin.POST("/industries", adminHandler.CreateIndustry)
+	admin.PUT("/industries/:id", adminHandler.UpdateIndustry)
+	admin.DELETE("/industries/:id", adminHandler.DeleteIndustry)
+
+	admin.POST("/benefit-types", adminHandler.CreateBenefitType)
+	admin.PUT("/benefit-types/:id", adminHandler.UpdateBenefitType)
+	admin.DELETE("/benefit-types/:id", adminHandler.DeleteBenefitType)
+
+	admin.POST("/employment-periods", adminHandler.CreateEmploymentPeriod)
+	admin.PUT("/employment-periods/:id", adminHandler.UpdateEmploymentPeriod)
+	admin.DELETE("/employment-periods/:id", adminHandler.DeleteEmploymentPeriod)
+
+	admin.POST("/employment-types", adminHandler.CreateEmploymentType)
+	admin.PUT("/employment-types/:id", adminHandler.UpdateEmploymentType)
+	admin.DELETE("/employment-types/:id", adminHandler.DeleteEmploymentType)
+}
+
+func SetupSuggestionRoutes(router *gin.RouterGroup, repo *repository.Repository, cfg *config.Config) {
+	suggestionHandler := handlers.NewSuggestionHandlers(repo)
+
+	suggestions := router.Group("/suggestions")
+
+	suggestions.POST("", suggestionHandler.CreateSuggestion)
+
+	adminSuggestions := suggestions.Group("")
+	adminSuggestions.Use(middleware.OptionalAuth(cfg))
+	adminSuggestions.Use(middleware.RequireAuth())
+	adminSuggestions.Use(middleware.RequireRoleMiddleware(models.RoleAdmin))
+
+	adminSuggestions.GET("", suggestionHandler.GetAllSuggestions)
+	adminSuggestions.DELETE("/:id", suggestionHandler.DeleteSuggestion)
+}
+
 func SetupAllRoutes(router *gin.Engine, postgres *db.PostgreSQL, cfg *config.Config) {
 	repo := repository.NewRepository(postgres)
 
@@ -162,6 +226,8 @@ func SetupAllRoutes(router *gin.Engine, postgres *db.PostgreSQL, cfg *config.Con
 	SetupBenefitTypeRoutes(api, postgres, cfg)
 	SetupEmploymentPeriodRoutes(api, postgres, cfg)
 	SetupEmploymentTypeRoutes(api, postgres, cfg)
+	SetupAdminRoutes(api, postgres, cfg)
+	SetupSuggestionRoutes(api, repo, cfg)
 
 	apiV1 := router.Group("/api/v1")
 
@@ -175,4 +241,6 @@ func SetupAllRoutes(router *gin.Engine, postgres *db.PostgreSQL, cfg *config.Con
 	SetupBenefitTypeRoutes(apiV1, postgres, cfg)
 	SetupEmploymentPeriodRoutes(apiV1, postgres, cfg)
 	SetupEmploymentTypeRoutes(apiV1, postgres, cfg)
+	SetupAdminRoutes(apiV1, postgres, cfg)
+	SetupSuggestionRoutes(apiV1, repo, cfg)
 }

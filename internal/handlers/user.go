@@ -28,7 +28,6 @@ func NewUserHandler(postgres *db.PostgreSQL, cfg *config.Config) *UserHandler {
 	}
 }
 
-// GetProfile возвращает профиль текущего пользователя
 // @Summary Профиль пользователя
 // @Description Возвращает профиль текущего пользователя
 // @Tags users
@@ -55,7 +54,6 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	utils.Response(c, http.StatusOK, user.ToProfile())
 }
 
-// UpdateProfile обновляет профиль текущего пользователя
 // @Summary Обновление профиля
 // @Description Обновляет профиль текущего пользователя
 // @Tags users
@@ -116,7 +114,6 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	utils.Response(c, http.StatusOK, user.ToProfile())
 }
 
-// GetUserReviews возвращает отзывы текущего пользователя
 // @Summary Отзывы пользователя
 // @Description Возвращает отзывы текущего пользователя
 // @Tags users

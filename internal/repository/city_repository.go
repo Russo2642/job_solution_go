@@ -113,19 +113,106 @@ func (r *CityRepositoryImpl) GetByID(ctx context.Context, id int) (*models.City,
 }
 
 func (r *CityRepositoryImpl) Search(ctx context.Context, query string) ([]models.City, error) {
-	sqlQuery := `
-		SELECT id, name, region, country
+	q := `
+		SELECT id, name, created_at, updated_at
 		FROM cities
-		WHERE name ILIKE $1 OR region ILIKE $1
-		ORDER BY name ASC
-		LIMIT 20
+		WHERE LOWER(name) LIKE LOWER($1)
+		ORDER BY name
 	`
 
 	var cities []models.City
-	err := r.postgres.SelectContext(ctx, &cities, sqlQuery, "%"+query+"%")
+	err := r.postgres.SelectContext(ctx, &cities, q, "%"+query+"%")
 	if err != nil {
 		return nil, fmt.Errorf("ошибка при поиске городов: %w", err)
 	}
 
 	return cities, nil
+}
+
+func (r *CityRepositoryImpl) Count(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM cities"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете городов: %w", err)
+	}
+	return count, nil
+}
+
+func (r *CityRepositoryImpl) Create(ctx context.Context, city *models.City) (int, error) {
+	query := `
+		INSERT INTO cities (name, region, country, created_at, updated_at)
+		VALUES ($1, $2, $3, NOW(), NOW())
+		RETURNING id
+	`
+
+	var id int
+	err := r.postgres.QueryRowContext(
+		ctx,
+		query,
+		city.Name,
+		city.Region,
+		city.Country,
+	).Scan(&id)
+
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при создании города: %w", err)
+	}
+
+	return id, nil
+}
+
+func (r *CityRepositoryImpl) Update(ctx context.Context, city *models.City) error {
+	query := `
+		UPDATE cities
+		SET name = $1, region = $2, country = $3, updated_at = NOW()
+		WHERE id = $4
+	`
+
+	_, err := r.postgres.ExecContext(
+		ctx,
+		query,
+		city.Name,
+		city.Region,
+		city.Country,
+		city.ID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("ошибка при обновлении города: %w", err)
+	}
+
+	return nil
+}
+
+func (r *CityRepositoryImpl) Delete(ctx context.Context, id int) error {
+	var count int
+	checkQuery := `
+		SELECT COUNT(*) FROM companies WHERE city_id = $1
+		UNION ALL
+		SELECT COUNT(*) FROM users WHERE city_id = $1
+	`
+
+	rows, err := r.postgres.QueryContext(ctx, checkQuery, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при проверке использования города: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := rows.Scan(&count); err != nil {
+			return fmt.Errorf("ошибка при чтении результатов проверки: %w", err)
+		}
+		if count > 0 {
+			return fmt.Errorf("город используется в компаниях или профилях пользователей и не может быть удален")
+		}
+	}
+
+	query := "DELETE FROM cities WHERE id = $1"
+	_, err = r.postgres.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("ошибка при удалении города: %w", err)
+	}
+
+	return nil
 }

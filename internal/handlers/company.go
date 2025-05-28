@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"job_solition/internal/config"
 	"job_solition/internal/db"
@@ -29,7 +29,6 @@ func NewCompanyHandler(postgres *db.PostgreSQL, cfg *config.Config) *CompanyHand
 	}
 }
 
-// GetCompanies возвращает список компаний с фильтрацией и пагинацией
 // @Summary Список компаний
 // @Description Возвращает список компаний с возможностью фильтрации и пагинации
 // @Tags companies
@@ -115,15 +114,12 @@ func (h *CompanyHandler) GetCompanies(c *gin.Context) {
 		filter.SortOrder = "desc"
 	}
 
-	fmt.Printf("Применяемые фильтры: Size=%s, CityID=%v, Industries=%v\n",
-		filter.Size, filter.CityID, filter.Industries)
-
 	companies, total, err := h.repo.Companies.GetAll(c, filter)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении компаний", err)
 		return
 	}
-	
+
 	companySizes := make(map[string]string)
 	for k, v := range models.CompanySizes {
 		companySizes[k] = v
@@ -141,7 +137,6 @@ func (h *CompanyHandler) GetCompanies(c *gin.Context) {
 	})
 }
 
-// GetCompany возвращает информацию о компании по ID или slug
 // @Summary Информация о компании
 // @Description Возвращает детальную информацию о компании по её ID или slug
 // @Tags companies
@@ -178,10 +173,9 @@ func (h *CompanyHandler) GetCompany(c *gin.Context) {
 	utils.Response(c, http.StatusOK, company)
 }
 
-// CreateCompany создает новую компанию
 // @Summary Создание компании
-// @Description Создает новую компанию
-// @Tags companies
+// @Description Создает новую компанию (только для администратора)
+// @Tags admin
 // @Accept json
 // @Produce json
 // @Security BearerAuth
@@ -190,19 +184,8 @@ func (h *CompanyHandler) GetCompany(c *gin.Context) {
 // @Failure 400 {object} utils.ErrorResponseDTO
 // @Failure 401 {object} utils.ErrorResponseDTO
 // @Failure 500 {object} utils.ErrorResponseDTO
-// @Router /companies [post]
+// @Router /admin/companies [post]
 func (h *CompanyHandler) CreateCompany(c *gin.Context) {
-	fmt.Printf("CreateCompany: проверка авторизации\n")
-	fmt.Printf("IsAuthenticatedKey=%v\n", c.GetBool(middleware.IsAuthenticatedKey))
-
-	authHeader := c.GetHeader("Authorization")
-	fmt.Printf("CreateCompany: Authorization header=%s\n", authHeader)
-
-	userID, userIDExists := c.Get(middleware.UserIDKey)
-	role, roleExists := c.Get(middleware.RoleKey)
-	fmt.Printf("CreateCompany: userID=%v (exists=%v), role=%v (exists=%v)\n",
-		userID, userIDExists, role, roleExists)
-
 	roleValue, exists := c.Get(middleware.RoleKey)
 	if !exists {
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Требуется авторизация", nil)
@@ -314,4 +297,184 @@ func parseIndustriesParam(industriesStr string) ([]int, error) {
 	}
 
 	return industries, nil
+}
+
+// @Summary Обновление компании
+// @Description Обновляет информацию о компании (только для администратора)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID компании"
+// @Param input body models.CompanyUpdateInput true "Данные для обновления"
+// @Success 200 {object} utils.ResponseDTO
+// @Failure 400 {object} utils.ErrorResponseDTO
+// @Failure 401 {object} utils.ErrorResponseDTO
+// @Failure 403 {object} utils.ErrorResponseDTO
+// @Failure 404 {object} utils.ErrorResponseDTO
+// @Failure 500 {object} utils.ErrorResponseDTO
+// @Router /admin/companies/{id} [put]
+func (h *CompanyHandler) UpdateCompany(c *gin.Context) {
+	roleValue, exists := c.Get(middleware.RoleKey)
+	if !exists || roleValue.(models.UserRole) != models.RoleAdmin {
+		utils.ErrorResponse(c, http.StatusForbidden, "Недостаточно прав", nil)
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Неверный формат ID", err)
+		return
+	}
+
+	var input models.CompanyUpdateInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Ошибка валидации", err)
+		return
+	}
+
+	company, err := h.repo.Companies.GetByID(c, id)
+	if err != nil {
+		if err.Error() == "компания не найдена" {
+			utils.ErrorResponse(c, http.StatusNotFound, "Компания не найдена", nil)
+		} else {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении компании", err)
+		}
+		return
+	}
+
+	if input.Name != nil {
+		company.Company.Name = *input.Name
+	}
+	if input.Size != nil {
+		company.Company.Size = *input.Size
+	}
+	if input.Logo != nil {
+		company.Company.Logo = *input.Logo
+	}
+	if input.Website != nil {
+		company.Company.Website = *input.Website
+	}
+	if input.Email != nil {
+		company.Company.Email = *input.Email
+	}
+	if input.Phone != nil {
+		company.Company.Phone = *input.Phone
+	}
+	if input.Address != nil {
+		company.Company.Address = *input.Address
+	}
+	if input.CityID != nil {
+		company.Company.CityID = input.CityID
+	}
+
+	company.Company.UpdatedAt = time.Now()
+
+	if err := h.repo.Companies.Update(c, &company.Company); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при обновлении компании", err)
+		return
+	}
+
+	if len(input.Industries) > 0 {
+		industries, err := h.repo.Industries.GetByIDs(c, input.Industries)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при проверке отраслей", err)
+			return
+		}
+
+		if len(industries) != len(input.Industries) {
+			utils.ErrorResponse(c, http.StatusBadRequest, "Одна или несколько указанных отраслей не существуют", nil)
+			return
+		}
+
+		currentIndustries, err := h.repo.Industries.GetByCompanyID(c, id)
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении текущих отраслей", err)
+			return
+		}
+
+		currentMap := make(map[int]bool)
+		newMap := make(map[int]bool)
+
+		for _, industry := range currentIndustries {
+			currentMap[industry.ID] = true
+		}
+
+		for _, industryID := range input.Industries {
+			newMap[industryID] = true
+		}
+
+		for _, industry := range currentIndustries {
+			if !newMap[industry.ID] {
+				if err := h.repo.Industries.RemoveCompanyIndustry(c, id, industry.ID); err != nil {
+					utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при удалении отрасли", err)
+					return
+				}
+			}
+		}
+
+		for _, industryID := range input.Industries {
+			if !currentMap[industryID] {
+				if err := h.repo.Industries.AddCompanyIndustry(c, id, industryID); err != nil {
+					utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при добавлении отрасли", err)
+					return
+				}
+			}
+		}
+	}
+
+	updatedCompany, err := h.repo.Companies.GetByID(c, id)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении обновленной компании", err)
+		return
+	}
+
+	utils.Response(c, http.StatusOK, updatedCompany)
+}
+
+// @Summary Удаление компании
+// @Description Удаляет компанию по ID (только для администратора)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "ID компании"
+// @Success 200 {object} utils.ResponseDTO
+// @Failure 400 {object} utils.ErrorResponseDTO
+// @Failure 401 {object} utils.ErrorResponseDTO
+// @Failure 403 {object} utils.ErrorResponseDTO
+// @Failure 404 {object} utils.ErrorResponseDTO
+// @Failure 500 {object} utils.ErrorResponseDTO
+// @Router /admin/companies/{id} [delete]
+func (h *CompanyHandler) DeleteCompany(c *gin.Context) {
+	roleValue, exists := c.Get(middleware.RoleKey)
+	if !exists || roleValue.(models.UserRole) != models.RoleAdmin {
+		utils.ErrorResponse(c, http.StatusForbidden, "Недостаточно прав", nil)
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Неверный формат ID", err)
+		return
+	}
+
+	_, err = h.repo.Companies.GetByID(c, id)
+	if err != nil {
+		if err.Error() == "компания не найдена" {
+			utils.ErrorResponse(c, http.StatusNotFound, "Компания не найдена", nil)
+		} else {
+			utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении компании", err)
+		}
+		return
+	}
+
+	if err := h.repo.Companies.Delete(c, id); err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при удалении компании", err)
+		return
+	}
+
+	utils.Response(c, http.StatusOK, gin.H{"message": "Компания успешно удалена"})
 }

@@ -225,9 +225,6 @@ func (r *CompanyRepositoryImpl) Delete(ctx context.Context, id int) error {
 }
 
 func (r *CompanyRepositoryImpl) GetAll(ctx context.Context, filter models.CompanyFilter) ([]models.CompanyWithRatings, int, error) {
-	fmt.Printf("Repository GetAll: Size=%s, CityID=%v, Industries=%v\n",
-		filter.Size, filter.CityID, filter.Industries)
-
 	baseQuery := `
 		FROM companies c
 	`
@@ -321,8 +318,6 @@ func (r *CompanyRepositoryImpl) GetAll(ctx context.Context, filter models.Compan
 	`, queryConditions, sortBy, sortOrder, argID, argID+1)
 
 	args = append(args, filter.Limit, offset)
-
-	fmt.Printf("SQL запрос: %s\nПараметры: %v\n", dataQuery, args)
 
 	var total int
 	err := r.postgres.GetContext(ctx, &total, countQuery, args[:len(args)-2]...)
@@ -447,17 +442,28 @@ func (r *CompanyRepositoryImpl) AddCategoryRating(ctx context.Context, companyID
 
 func (r *CompanyRepositoryImpl) GetCategoryRatings(ctx context.Context, companyID int) ([]models.CompanyCategoryRating, error) {
 	query := `
-		SELECT ccr.company_id, ccr.category_id, rc.name AS category, ccr.rating
-		FROM company_category_ratings ccr
-		JOIN rating_categories rc ON ccr.category_id = rc.id
-		WHERE ccr.company_id = $1
+		SELECT cr.company_id, rc.id as category_id, rc.name as category, cr.rating
+		FROM company_category_ratings cr
+		JOIN rating_categories rc ON rc.id = cr.category_id
+		WHERE cr.company_id = $1
+		ORDER BY rc.name
 	`
 
 	var ratings []models.CompanyCategoryRating
 	err := r.postgres.SelectContext(ctx, &ratings, query, companyID)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении рейтингов компании по категориям: %w", err)
+		return nil, fmt.Errorf("ошибка при получении рейтингов компании: %w", err)
 	}
 
 	return ratings, nil
+}
+
+func (r *CompanyRepositoryImpl) Count(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM companies"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете компаний: %w", err)
+	}
+	return count, nil
 }

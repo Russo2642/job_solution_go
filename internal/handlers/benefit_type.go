@@ -24,7 +24,6 @@ func NewBenefitTypeHandler(postgres *db.PostgreSQL, cfg *config.Config) *Benefit
 	}
 }
 
-// GetAll возвращает все типы бенефитов
 // @Summary Получение всех типов бенефитов
 // @Description Возвращает список всех доступных типов бенефитов
 // @Tags benefit-types
@@ -45,7 +44,6 @@ func (h *BenefitTypeHandler) GetAll(c *gin.Context) {
 	})
 }
 
-// GetByID возвращает тип бенефита по ID
 // @Summary Получение типа бенефита по ID
 // @Description Возвращает информацию о типе бенефита по его ID
 // @Tags benefit-types

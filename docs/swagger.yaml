@@ -9,6 +9,62 @@ definitions:
     required:
     - color
     type: object
+  models.AdminReviewUpdateInput:
+    properties:
+      cons:
+        type: string
+      is_former_employee:
+        type: boolean
+      is_recommended:
+        type: boolean
+      moderation_comment:
+        type: string
+      position:
+        maxLength: 100
+        minLength: 2
+        type: string
+      pros:
+        type: string
+      rating:
+        maximum: 5
+        minimum: 1
+        type: number
+      status:
+        enum:
+        - pending
+        - approved
+        - rejected
+        type: string
+    type: object
+  models.BenefitTypeInput:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  models.CityInput:
+    properties:
+      country:
+        maxLength: 100
+        minLength: 2
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+      region:
+        maxLength: 100
+        type: string
+    required:
+    - country
+    - name
+    type: object
   models.CompanyInput:
     properties:
       address:
@@ -45,12 +101,92 @@ definitions:
     - name
     - size
     type: object
+  models.CompanyUpdateInput:
+    properties:
+      address:
+        type: string
+      city_id:
+        minimum: 1
+        type: integer
+      email:
+        type: string
+      industries:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      logo:
+        type: string
+      name:
+        maxLength: 255
+        minLength: 2
+        type: string
+      phone:
+        type: string
+      size:
+        enum:
+        - small
+        - medium
+        - large
+        - enterprise
+        type: string
+      website:
+        type: string
+    type: object
+  models.EmploymentPeriodInput:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  models.EmploymentTypeInput:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
   models.ForgotPasswordInput:
     properties:
       email:
         type: string
     required:
     - email
+    type: object
+  models.IndustryInput:
+    properties:
+      color:
+        maxLength: 20
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  models.RatingCategoryInput:
+    properties:
+      description:
+        maxLength: 255
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
     type: object
   models.ResetPasswordInput:
     properties:
@@ -135,6 +271,30 @@ definitions:
     - ReviewStatusPending
     - ReviewStatusApproved
     - ReviewStatusRejected
+  models.SuggestionInput:
+    properties:
+      text:
+        maxLength: 2000
+        minLength: 5
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/models.SuggestionType'
+        enum:
+        - company
+        - suggestion
+    required:
+    - text
+    - type
+    type: object
+  models.SuggestionType:
+    enum:
+    - company
+    - suggestion
+    type: string
+    x-enum-varnames:
+    - SuggestionTypeCompany
+    - SuggestionTypeImprovement
   models.UserLoginInput:
     properties:
       email:
@@ -164,6 +324,28 @@ definitions:
     - email
     - password
     - password_confirm
+    type: object
+  models.UserRole:
+    enum:
+    - user
+    - moderator
+    - admin
+    type: string
+    x-enum-varnames:
+    - RoleUser
+    - RoleModerator
+    - RoleAdmin
+  models.UserRoleUpdateInput:
+    properties:
+      role:
+        allOf:
+        - $ref: '#/definitions/models.UserRole'
+        enum:
+        - admin
+        - moderator
+        - user
+    required:
+    - role
     type: object
   models.UserUpdateInput:
     properties:
@@ -205,6 +387,1348 @@ info:
   title: JobSolution API
   version: "1.0"
 paths:
+  /admin/benefit-types:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый тип бенефита
+      parameters:
+      - description: Данные типа бенефита
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.BenefitTypeInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание типа бенефита
+      tags:
+      - admin
+  /admin/benefit-types/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет тип бенефита по ID
+      parameters:
+      - description: ID типа бенефита
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление типа бенефита
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий тип бенефита
+      parameters:
+      - description: ID типа бенефита
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные типа бенефита
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.BenefitTypeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление типа бенефита
+      tags:
+      - admin
+  /admin/cities:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый город
+      parameters:
+      - description: Данные города
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CityInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание города
+      tags:
+      - admin
+  /admin/cities/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет город по ID
+      parameters:
+      - description: ID города
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление города
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий город
+      parameters:
+      - description: ID города
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные города
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CityInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление города
+      tags:
+      - admin
+  /admin/companies:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую компанию (только для администратора)
+      parameters:
+      - description: Данные компании (name, size, city_id, industries обязательны)
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CompanyInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание компании
+      tags:
+      - admin
+  /admin/companies/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет компанию по ID (только для администратора)
+      parameters:
+      - description: ID компании
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление компании
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о компании (только для администратора)
+      parameters:
+      - description: ID компании
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CompanyUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление компании
+      tags:
+      - admin
+  /admin/employment-periods:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый период работы
+      parameters:
+      - description: Данные периода работы
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmploymentPeriodInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание периода работы
+      tags:
+      - admin
+  /admin/employment-periods/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет период работы по ID
+      parameters:
+      - description: ID периода работы
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление периода работы
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий период работы
+      parameters:
+      - description: ID периода работы
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные периода работы
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmploymentPeriodInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление периода работы
+      tags:
+      - admin
+  /admin/employment-types:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый тип занятости
+      parameters:
+      - description: Данные типа занятости
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmploymentTypeInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание типа занятости
+      tags:
+      - admin
+  /admin/employment-types/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет тип занятости по ID
+      parameters:
+      - description: ID типа занятости
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление типа занятости
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующий тип занятости
+      parameters:
+      - description: ID типа занятости
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные типа занятости
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.EmploymentTypeInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление типа занятости
+      tags:
+      - admin
+  /admin/industries:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую индустрию
+      parameters:
+      - description: Данные индустрии
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.IndustryInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание индустрии
+      tags:
+      - admin
+  /admin/industries/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет индустрию по ID
+      parameters:
+      - description: ID индустрии
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление индустрии
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующую индустрию
+      parameters:
+      - description: ID индустрии
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные индустрии
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.IndustryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление индустрии
+      tags:
+      - admin
+  /admin/rating-categories:
+    post:
+      consumes:
+      - application/json
+      description: Создает новую категорию рейтинга
+      parameters:
+      - description: Данные категории
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.RatingCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Создание категории рейтинга
+      tags:
+      - admin
+  /admin/rating-categories/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет категорию рейтинга по ID
+      parameters:
+      - description: ID категории
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление категории рейтинга
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет существующую категорию рейтинга
+      parameters:
+      - description: ID категории
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные категории
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.RatingCategoryInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление категории рейтинга
+      tags:
+      - admin
+  /admin/reviews/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет отзыв по ID (для администратора)
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление отзыва
+      tags:
+      - admin
+    put:
+      consumes:
+      - application/json
+      description: Обновляет отзыв по ID (для администратора)
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.AdminReviewUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление отзыва
+      tags:
+      - admin
+  /admin/reviews/{id}/approve:
+    put:
+      consumes:
+      - application/json
+      description: Одобряет отзыв, прошедший модерацию
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные модерации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReviewModerationInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Одобрение отзыва
+      tags:
+      - admin
+  /admin/reviews/{id}/reject:
+    put:
+      consumes:
+      - application/json
+      description: Отклоняет отзыв с указанием причины
+      parameters:
+      - description: ID отзыва
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные модерации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.ReviewModerationInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отклонение отзыва
+      tags:
+      - admin
+  /admin/reviews/moderation/pending:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отзывов, ожидающих модерации
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отзывы на модерации
+      tags:
+      - admin
+  /admin/statistics:
+    get:
+      consumes:
+      - application/json
+      description: 'Возвращает общую статистику по сайту: количество пользователей,
+        компаний, отзывов и т.д.'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Получение статистики
+      tags:
+      - admin
+  /admin/users:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список пользователей с пагинацией
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Получение списка пользователей
+      tags:
+      - admin
+  /admin/users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Удаление пользователя
+      tags:
+      - admin
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о пользователе по ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Получение пользователя
+      tags:
+      - admin
+  /admin/users/{id}/role:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет роль пользователя (admin, moderator, user)
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Новая роль пользователя
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserRoleUpdateInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Обновление роли пользователя
+      tags:
+      - admin
   /auth/forgot-password:
     post:
       consumes:
@@ -612,41 +2136,6 @@ paths:
       summary: Список компаний
       tags:
       - companies
-    post:
-      consumes:
-      - application/json
-      description: Создает новую компанию
-      parameters:
-      - description: Данные компании (name, size, city_id, industries обязательны)
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.CompanyInput'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/utils.ResponseDTO'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-      security:
-      - BearerAuth: []
-      summary: Создание компании
-      tags:
-      - companies
   /companies/{id_or_slug}:
     get:
       consumes:
@@ -1035,104 +2524,6 @@ paths:
       summary: Получение отзыва
       tags:
       - reviews
-  /reviews/{id}/approve:
-    put:
-      consumes:
-      - application/json
-      description: Одобряет отзыв, прошедший модерацию
-      parameters:
-      - description: ID отзыва
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные модерации
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.ReviewModerationInput'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/utils.ResponseDTO'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-      security:
-      - BearerAuth: []
-      summary: Одобрение отзыва
-      tags:
-      - reviews
-  /reviews/{id}/reject:
-    put:
-      consumes:
-      - application/json
-      description: Отклоняет отзыв с указанием причины
-      parameters:
-      - description: ID отзыва
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: Данные модерации
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.ReviewModerationInput'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/utils.ResponseDTO'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-      security:
-      - BearerAuth: []
-      summary: Отклонение отзыва
-      tags:
-      - reviews
   /reviews/{id}/useful:
     delete:
       consumes:
@@ -1275,17 +2666,26 @@ paths:
       summary: Отзывы о компании
       tags:
       - reviews
-  /reviews/moderation/pending:
+  /suggestions:
     get:
       consumes:
       - application/json
-      description: Возвращает список отзывов, ожидающих модерации
+      description: Возвращает список предложений с фильтрацией по типу и сортировкой
+        по дате
       parameters:
+      - description: Тип предложения (company/suggestion)
+        in: query
+        name: type
+        type: string
+      - description: Порядок сортировки (asc/desc)
+        in: query
+        name: sort_order
+        type: string
       - description: Номер страницы
         in: query
         name: page
         type: integer
-      - description: Количество записей на странице
+      - description: Количество элементов на странице
         in: query
         name: limit
         type: integer
@@ -1295,24 +2695,83 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/utils.ResponseDTO'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "403":
-          description: Forbidden
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
           schema:
             $ref: '#/definitions/utils.ErrorResponseDTO'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.ErrorResponseDTO'
-      security:
-      - BearerAuth: []
-      summary: Отзывы на модерации
+      summary: Получить все предложения
       tags:
-      - reviews
+      - suggestions
+    post:
+      consumes:
+      - application/json
+      description: Создает новое предложение компании или улучшение
+      parameters:
+      - description: Информация о предложении
+        in: body
+        name: suggestion
+        required: true
+        schema:
+          $ref: '#/definitions/models.SuggestionInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Создать новое предложение
+      tags:
+      - suggestions
+  /suggestions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет предложение по ID
+      parameters:
+      - description: ID предложения
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      summary: Удалить предложение
+      tags:
+      - suggestions
   /users/me:
     get:
       consumes:

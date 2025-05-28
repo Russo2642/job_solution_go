@@ -9,19 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RatingCategoryHandler обработчик для работы с категориями рейтингов
 type RatingCategoryHandler struct {
 	repo *repository.Repository
 }
 
-// NewRatingCategoryHandler создает новый обработчик для работы с категориями рейтингов
 func NewRatingCategoryHandler(repo *repository.Repository) *RatingCategoryHandler {
 	return &RatingCategoryHandler{
 		repo: repo,
 	}
 }
 
-// GetAll возвращает все категории рейтингов
 // @Summary Получение всех категорий рейтингов
 // @Description Возвращает список всех доступных категорий рейтингов
 // @Tags rating-categories
@@ -42,7 +39,6 @@ func (h *RatingCategoryHandler) GetAll(c *gin.Context) {
 	})
 }
 
-// GetByID возвращает категорию рейтинга по ID
 // @Summary Получение категории рейтинга по ID
 // @Description Возвращает категорию рейтинга по её ID
 // @Tags rating-categories

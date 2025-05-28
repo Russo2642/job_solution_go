@@ -26,7 +26,6 @@ func NewCityHandler(postgres *db.PostgreSQL, cfg *config.Config) *CityHandler {
 	}
 }
 
-// GetCities возвращает список городов с фильтрацией и пагинацией
 // @Summary Список городов
 // @Description Возвращает список городов с возможностью фильтрации и пагинации
 // @Tags cities
@@ -79,7 +78,6 @@ func (h *CityHandler) GetCities(c *gin.Context) {
 	})
 }
 
-// SearchCities ищет города по запросу
 // @Summary Поиск городов
 // @Description Ищет города по названию или региону для автодополнения
 // @Tags cities

@@ -84,8 +84,8 @@ jobs:
             set -e
 
             cd ~
-            sudo mkdir -p laps/backend
-            cd ~/laps/backend
+            sudo mkdir -p jobsolution/backend
+            cd ~/jobsolution/backend
 
             sudo mkdir -p certbot/conf certbot/www ssl
 

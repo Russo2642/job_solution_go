@@ -68,6 +68,10 @@ type ResetPasswordInput struct {
 	PasswordConfirm string `json:"password_confirm" binding:"required,eqfield=Password"`
 }
 
+type UserRoleUpdateInput struct {
+	Role UserRole `json:"role" binding:"required,oneof=admin moderator user"`
+}
+
 type PasswordResetToken struct {
 	ID        int       `db:"id"`
 	UserID    int       `db:"user_id"`

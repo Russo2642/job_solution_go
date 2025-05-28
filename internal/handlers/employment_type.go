@@ -24,7 +24,6 @@ func NewEmploymentTypeHandler(postgres *db.PostgreSQL, cfg *config.Config) *Empl
 	}
 }
 
-// GetAll возвращает все типы занятости
 // @Summary Получение всех типов занятости
 // @Description Возвращает список всех доступных типов занятости
 // @Tags employment-types
@@ -45,7 +44,6 @@ func (h *EmploymentTypeHandler) GetAll(c *gin.Context) {
 	})
 }
 
-// GetByID возвращает тип занятости по ID
 // @Summary Получение типа занятости по ID
 // @Description Возвращает информацию о типе занятости по его ID
 // @Tags employment-types

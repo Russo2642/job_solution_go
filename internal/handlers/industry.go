@@ -27,7 +27,6 @@ func NewIndustryHandler(postgres *db.PostgreSQL, cfg *config.Config) *IndustryHa
 	}
 }
 
-// GetIndustries возвращает список отраслей с фильтрацией и пагинацией
 // @Summary Список отраслей
 // @Description Возвращает список отраслей с возможностью фильтрации и пагинации
 // @Tags industries
@@ -79,7 +78,6 @@ func (h *IndustryHandler) GetIndustries(c *gin.Context) {
 	})
 }
 
-// GetCompanyIndustries возвращает отрасли компании
 // @Summary Отрасли компании
 // @Description Возвращает список отраслей указанной компании
 // @Tags industries
@@ -122,7 +120,6 @@ type UpdateColorInput struct {
 	Color string `json:"color" binding:"required,min=4,max=7"`
 }
 
-// UpdateIndustryColor обновляет цвет индустрии
 // @Summary Обновление цвета индустрии
 // @Description Обновляет цвет (hex) указанной индустрии
 // @Tags industries

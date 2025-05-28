@@ -804,24 +804,44 @@ func (r *ReviewRepositoryImpl) GetUsefulMarksByReviews(ctx context.Context, user
 
 	query := fmt.Sprintf(`
 		SELECT review_id
-		FROM useful_marks
+		FROM review_useful_marks
 		WHERE user_id = $1 AND review_id IN (%s)
 	`, strings.Join(placeholders, ", "))
 
-	rows, err := r.postgres.QueryContext(ctx, query, args...)
+	var markedReviewIDs []int
+	err := r.postgres.SelectContext(ctx, &markedReviewIDs, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("ошибка при получении отметок 'полезно': %w", err)
+		return nil, fmt.Errorf("ошибка при получении полезных отзывов: %w", err)
 	}
-	defer rows.Close()
 
 	result := make(map[int]bool)
-	for rows.Next() {
-		var reviewID int
-		if err := rows.Scan(&reviewID); err != nil {
-			return nil, fmt.Errorf("ошибка при чтении ID отзыва: %w", err)
-		}
-		result[reviewID] = true
+	for _, id := range reviewIDs {
+		result[id] = false
+	}
+
+	for _, id := range markedReviewIDs {
+		result[id] = true
 	}
 
 	return result, nil
+}
+
+func (r *ReviewRepositoryImpl) Count(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM reviews"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете отзывов: %w", err)
+	}
+	return count, nil
+}
+
+func (r *ReviewRepositoryImpl) CountPending(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM reviews WHERE status = 'pending'"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете ожидающих отзывов: %w", err)
+	}
+	return count, nil
 }

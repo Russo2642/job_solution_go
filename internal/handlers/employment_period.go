@@ -24,7 +24,6 @@ func NewEmploymentPeriodHandler(postgres *db.PostgreSQL, cfg *config.Config) *Em
 	}
 }
 
-// GetAll возвращает все периоды работы
 // @Summary Получение всех периодов работы
 // @Description Возвращает список всех доступных периодов работы
 // @Tags employment-periods
@@ -45,7 +44,6 @@ func (h *EmploymentPeriodHandler) GetAll(c *gin.Context) {
 	})
 }
 
-// GetByID возвращает период работы по ID
 // @Summary Получение периода работы по ID
 // @Description Возвращает информацию о периоде работы по его ID
 // @Tags employment-periods

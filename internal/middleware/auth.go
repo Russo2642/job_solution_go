@@ -94,11 +94,6 @@ func RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		isAuthenticated, exists := c.Get(IsAuthenticatedKey)
 
-		fmt.Printf("RequireAuth: exists=%v, isAuthenticated=%v\n", exists, isAuthenticated)
-
-		authHeader := c.GetHeader("Authorization")
-		fmt.Printf("RequireAuth: Authorization header=%s\n", authHeader)
-
 		if !exists || isAuthenticated != true {
 			utils.ErrorResponse(c, http.StatusUnauthorized, "Требуется авторизация", nil)
 			c.Abort()
