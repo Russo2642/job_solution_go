@@ -17,31 +17,23 @@ if [ -d "$data_path" ]; then
   fi
 fi
 
-if [ ! -d "$data_path/conf/live/$domains" ]; then
-  echo "Создание директорий для хранения сертификатов..."
-  mkdir -p "$data_path/conf/live/$domains"
-  mkdir -p "$data_path/www"
-fi
+mkdir -p "$data_path/conf/live/$domains"
+mkdir -p "$data_path/www"
 
 echo "Настройка временного SSL сертификата..."
 path="$data_path/conf/live/$domains"
-mkdir -p "$data_path/conf/live/$domains"
 
-# Создаем самоподписанный сертификат для начальной загрузки
 docker-compose run --rm --entrypoint "\
   openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1\
     -keyout '$path/privkey.pem' \
     -out '$path/fullchain.pem' \
     -subj '/CN=localhost'" certbot
 
+echo "Перезапускаем только nginx..."
+docker-compose stop nginx
+docker-compose up -d nginx
+
 echo "Получение сертификата Let's Encrypt..."
-# Выключаем nginx
-docker-compose down nginx
-
-# Запускаем nginx
-docker-compose up --force-recreate -d nginx
-
-# Запрашиваем сертификат
 docker-compose run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
     --email $email \
@@ -50,7 +42,7 @@ docker-compose run --rm --entrypoint "\
     -d $domains \
     --force-renewal" certbot
 
-echo "Перезапускаем nginx..."
-docker-compose up -d nginx
+echo "Перезапускаем nginx после получения сертификата..."
+docker-compose restart nginx
 
-echo "Готово!" 
+echo "Готово!"
