@@ -8,7 +8,7 @@ fi
 domains=(77.240.38.137)
 rsa_key_size=4096
 data_path="./certbot"
-email="your-email@example.com"
+email="gothiq2302@gmail.com"
 
 if [ -d "$data_path" ]; then
   read -p "Существующие данные в $data_path. Продолжить и перезаписать существующие сертификаты? (y/N) " decision
