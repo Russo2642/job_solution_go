@@ -31,20 +31,20 @@ jobs:
       - name: Prepare deployment files
         run: |
           # Создаем временную директорию для файлов деплоя
-          sudo mkdir -p deploy_files
+          mkdir -p deploy_files
           
           # Копируем docker-compose.yml
-          sudo cp docker-compose.yml deploy_files/
+          cp docker-compose.yml deploy_files/
           
           # Копируем nginx.conf если он есть
           if [ -f "nginx.conf" ]; then
-            sudo cp nginx.conf deploy_files/
+            cp nginx.conf deploy_files/
           fi
           
           # Копируем скрипт для инициализации SSL-сертификатов
           if [ -f "init-letsencrypt.sh" ]; then
-            sudo cp init-letsencrypt.sh deploy_files/
-            sudo chmod +x deploy_files/init-letsencrypt.sh
+            cp init-letsencrypt.sh deploy_files/
+            chmod +x deploy_files/init-letsencrypt.sh
             # Обновляем email в скрипте
             sed -i "s/your-real-email@example.com/${{ secrets.SSL_EMAIL }}/g" deploy_files/init-letsencrypt.sh
           fi
