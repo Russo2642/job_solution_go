@@ -85,16 +85,20 @@ jobs:
             
             # Копируем файлы из временной директории деплоя
             if [ -d ~/temp_deploy ]; then
-              # Копируем docker-compose.yml и nginx.conf
-              cp ~/temp_deploy/docker-compose.yml ./docker-compose.yml
+              # Копируем docker-compose.yml и nginx.conf с проверкой прав
+              sudo cp ~/temp_deploy/docker-compose.yml ./docker-compose.yml
+              sudo chown $(whoami):$(whoami) ./docker-compose.yml
+              
               if [ -f ~/temp_deploy/nginx.conf ]; then
-                cp ~/temp_deploy/nginx.conf ./nginx.conf
+                sudo cp ~/temp_deploy/nginx.conf ./nginx.conf
+                sudo chown $(whoami):$(whoami) ./nginx.conf
               fi
               
               # Копируем скрипт для SSL
               if [ -f ~/temp_deploy/init-letsencrypt.sh ]; then
-                cp ~/temp_deploy/init-letsencrypt.sh ./init-letsencrypt.sh
-                chmod +x ./init-letsencrypt.sh
+                sudo cp ~/temp_deploy/init-letsencrypt.sh ./init-letsencrypt.sh
+                sudo chmod +x ./init-letsencrypt.sh
+                sudo chown $(whoami):$(whoami) ./init-letsencrypt.sh
               fi
               
               # Удаляем временную директорию
