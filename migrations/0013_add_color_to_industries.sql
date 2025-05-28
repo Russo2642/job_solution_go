@@ -1,10 +1,7 @@
--- Включаем безопасное удаление (без ошибок при отсутствии объектов)
 SET client_min_messages TO WARNING;
 
--- Добавляем колонку с цветом в формате HEX для отраслей
 ALTER TABLE industries ADD COLUMN IF NOT EXISTS color VARCHAR(7);
 
--- Обновляем существующие отрасли, добавляя им цвета
 UPDATE industries SET color = '#4285F4' WHERE id = 1; -- Разработка ПО (синий)
 UPDATE industries SET color = '#34A853' WHERE id = 2; -- Веб-разработка (зеленый)
 UPDATE industries SET color = '#FBBC05' WHERE id = 3; -- Мобильная разработка (желтый)
@@ -20,6 +17,3 @@ UPDATE industries SET color = '#00BCD4' WHERE id = 12; -- E-commerce (цвет �
 UPDATE industries SET color = '#3F51B5' WHERE id = 13; -- Интернет вещей (индиго)
 UPDATE industries SET color = '#607D8B' WHERE id = 14; -- Телекоммуникации (серо-синий)
 UPDATE industries SET color = '#795548' WHERE id = 15; -- ERP/CRM системы (коричневый)
-
--- Записываем информацию о миграции
-INSERT INTO migration_history (filename) VALUES ('0020_add_color_to_industries.sql'); 

@@ -1,14 +1,11 @@
--- Включаем безопасное удаление (без ошибок при отсутствии объектов)
 SET client_min_messages TO WARNING;
 
--- Создаем таблицу для отслеживания миграций, если её еще нет
 CREATE TABLE IF NOT EXISTS migration_history (
     id SERIAL PRIMARY KEY,
     filename VARCHAR(255) NOT NULL UNIQUE,
     applied_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Создаем типы для перечислений
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
         CREATE TYPE user_role AS ENUM ('user', 'moderator', 'admin');
@@ -19,7 +16,6 @@ DO $$ BEGIN
     END IF;
 END $$;
 
--- Создаем таблицу пользователей
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,
@@ -32,7 +28,6 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Создаем таблицу городов
 CREATE TABLE IF NOT EXISTS cities (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -41,7 +36,6 @@ CREATE TABLE IF NOT EXISTS cities (
     UNIQUE(name, region, country)
 );
 
--- Создаем таблицу компаний
 CREATE TABLE IF NOT EXISTS companies (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
@@ -57,20 +51,17 @@ CREATE TABLE IF NOT EXISTS companies (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Создаем таблицу отраслей
 CREATE TABLE IF NOT EXISTS industries (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE
 );
 
--- Создаем таблицу для связи компаний с отраслями
 CREATE TABLE IF NOT EXISTS company_industries (
     company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     industry_id INTEGER NOT NULL REFERENCES industries(id) ON DELETE CASCADE,
     PRIMARY KEY (company_id, industry_id)
 );
 
--- Создаем таблицу для рейтингов компаний по категориям
 CREATE TABLE IF NOT EXISTS company_category_ratings (
     company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     category VARCHAR(50) NOT NULL,
@@ -78,7 +69,6 @@ CREATE TABLE IF NOT EXISTS company_category_ratings (
     PRIMARY KEY (company_id, category)
 );
 
--- Создаем таблицу отзывов
 CREATE TABLE IF NOT EXISTS reviews (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -98,7 +88,6 @@ CREATE TABLE IF NOT EXISTS reviews (
     approved_at TIMESTAMP
 );
 
--- Создаем таблицу для рейтингов отзывов по категориям
 CREATE TABLE IF NOT EXISTS review_category_ratings (
     review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
     category VARCHAR(50) NOT NULL,
@@ -106,14 +95,12 @@ CREATE TABLE IF NOT EXISTS review_category_ratings (
     PRIMARY KEY (review_id, category)
 );
 
--- Создаем таблицу для бонусов и льгот в отзывах
 CREATE TABLE IF NOT EXISTS review_benefits (
     id SERIAL PRIMARY KEY,
     review_id INTEGER NOT NULL REFERENCES reviews(id) ON DELETE CASCADE,
     benefit VARCHAR(100) NOT NULL
 );
 
--- Создаем таблицу для refresh токенов
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -122,7 +109,6 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Добавляем основные отрасли IT
 INSERT INTO industries (name) VALUES 
     ('Разработка ПО'),
     ('Веб-разработка'),
@@ -141,7 +127,6 @@ INSERT INTO industries (name) VALUES
     ('ERP/CRM системы')
 ON CONFLICT (name) DO NOTHING;
 
--- Создаем индексы для оптимизации запросов
 CREATE INDEX IF NOT EXISTS idx_reviews_company_id ON reviews(company_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_status ON reviews(status);
@@ -152,7 +137,6 @@ CREATE INDEX IF NOT EXISTS idx_company_industries_industry_id ON company_industr
 CREATE INDEX IF NOT EXISTS idx_cities_name ON cities(name);
 CREATE INDEX IF NOT EXISTS idx_cities_country ON cities(country);
 
--- Функция для обновления updated_at при обновлении записи
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -161,24 +145,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Триггеры для обновления timestamps
 DO $$ 
 BEGIN
-    -- Триггер для пользователей
     DROP TRIGGER IF EXISTS update_users_updated_at ON users;
     CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
     
-    -- Триггер для компаний
     DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
     CREATE TRIGGER update_companies_updated_at
     BEFORE UPDATE ON companies
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
     
-    -- Триггер для отзывов
     DROP TRIGGER IF EXISTS update_reviews_updated_at ON reviews;
     CREATE TRIGGER update_reviews_updated_at
     BEFORE UPDATE ON reviews
@@ -186,7 +166,6 @@ BEGIN
     EXECUTE FUNCTION update_updated_at_column();
 END $$; 
 
--- Добавляем базовые города Казахстана
 INSERT INTO cities (name, region, country)
 VALUES 
     ('Алматы', 'Алматинская область', 'Казахстан'),

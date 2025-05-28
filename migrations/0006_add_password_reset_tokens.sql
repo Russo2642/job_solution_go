@@ -1,4 +1,3 @@
--- Создаем таблицу для токенов сброса пароля
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -7,7 +6,6 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL
 );
 
--- Добавляем индекс для токена и индекс для user_id
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -27,7 +25,6 @@ BEGIN
     END IF;
 END $$;
 
--- Добавляем комментарии к таблице и полям
 COMMENT ON TABLE password_reset_tokens IS 'Токены для сброса пароля пользователей';
 COMMENT ON COLUMN password_reset_tokens.id IS 'Уникальный идентификатор токена';
 COMMENT ON COLUMN password_reset_tokens.user_id IS 'ID пользователя, которому принадлежит токен';

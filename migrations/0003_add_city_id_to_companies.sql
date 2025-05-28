@@ -1,7 +1,5 @@
--- Добавляем поле city_id в таблицу companies
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS city_id INTEGER;
 
--- Добавляем внешний ключ на таблицу cities, если его еще нет
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -13,7 +11,6 @@ BEGIN
     END IF;
 END $$;
 
--- Создаем индекс для ускорения поиска по city_id, если его еще нет
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -24,7 +21,6 @@ BEGIN
     END IF;
 END $$;
 
--- Добавим комментарий к таблице, если его еще нет
 DO $$
 BEGIN
     IF NOT EXISTS (

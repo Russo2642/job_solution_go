@@ -20,7 +20,7 @@ func (p *PostgreSQL) InitDatabase() error {
 		return fmt.Errorf("ошибка соединения с базой данных: %w", err)
 	}
 
-	migrationsDir := filepath.Join("internal", "db", "migrations")
+	migrationsDir := "migrations"
 
 	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
 		return fmt.Errorf("директория с миграциями не найдена: %s", migrationsDir)

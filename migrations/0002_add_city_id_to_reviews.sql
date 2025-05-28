@@ -1,7 +1,5 @@
--- Добавляем поле city_id в таблицу reviews
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS city_id INTEGER;
 
--- Добавляем внешний ключ на таблицу cities, но с опцией NULL для обратной совместимости
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -13,7 +11,6 @@ BEGIN
     END IF;
 END $$;
 
--- Создаем индекс для ускорения поиска по city_id, если его еще нет
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -24,8 +21,6 @@ BEGIN
     END IF;
 END $$;
 
--- Заполняем поле city_id на основе существующих данных
--- Проходим по всем записям и ищем соответствующий город в таблице cities
 UPDATE reviews r
 SET city_id = (
     SELECT c.id 
@@ -35,7 +30,6 @@ SET city_id = (
 )
 WHERE r.city_id IS NULL AND r.city IS NOT NULL;
 
--- Добавим комментарий к таблице, если его еще нет
 DO $$
 BEGIN
     IF NOT EXISTS (
