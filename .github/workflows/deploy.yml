@@ -45,8 +45,6 @@ jobs:
           if [ -f "init-letsencrypt.sh" ]; then
             cp init-letsencrypt.sh deploy_files/
             chmod +x deploy_files/init-letsencrypt.sh
-            # Обновляем email в скрипте
-            sed -i "s/your-real-email@example.com/${{ secrets.SSL_EMAIL }}/g" deploy_files/init-letsencrypt.sh
           fi
           
           # Для проверки выводим список файлов
