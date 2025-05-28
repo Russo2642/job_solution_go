@@ -31,20 +31,20 @@ jobs:
       - name: Prepare deployment files
         run: |
           # Создаем временную директорию для файлов деплоя
-          mkdir -p deploy_files
+          sudo mkdir -p deploy_files
           
           # Копируем docker-compose.yml
-          cp docker-compose.yml deploy_files/
+          sudo cp docker-compose.yml deploy_files/
           
           # Копируем nginx.conf если он есть
           if [ -f "nginx.conf" ]; then
-            cp nginx.conf deploy_files/
+            sudo cp nginx.conf deploy_files/
           fi
           
           # Копируем скрипт для инициализации SSL-сертификатов
           if [ -f "init-letsencrypt.sh" ]; then
-            cp init-letsencrypt.sh deploy_files/
-            chmod +x deploy_files/init-letsencrypt.sh
+            sudo cp init-letsencrypt.sh deploy_files/
+            sudo chmod +x deploy_files/init-letsencrypt.sh
             # Обновляем email в скрипте
             sed -i "s/your-real-email@example.com/${{ secrets.SSL_EMAIL }}/g" deploy_files/init-letsencrypt.sh
           fi
@@ -77,11 +77,11 @@ jobs:
             cd ~
             
             # Создаём директории laps/backend если они не существуют
-            mkdir -p laps/backend
-            cd laps/backend
+            sudo mkdir -p laps/backend
+            cd ~/laps/backend
             
             # Создаём необходимые директории
-            mkdir -p certbot/conf certbot/www ssl
+            sudo mkdir -p ~/laps/backend/certbot/conf ~/laps/backend/certbot/www ~/laps/backend/ssl
             
             # Копируем файлы из временной директории деплоя
             if [ -d ~/temp_deploy ]; then
