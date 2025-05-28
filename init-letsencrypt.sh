@@ -25,7 +25,9 @@ if [ -d "$data_path" ]; then
   fi
 fi
 
-# Создаем директории с правильными правами
+# Создаем все необходимые директории с правильными правами
+echo "Создание директорий для сертификатов..."
+rm -rf "$data_path/conf/live"
 mkdir -p "$data_path/conf/live/$domains"
 mkdir -p "$data_path/www"
 chmod -R 755 "$data_path"
@@ -33,21 +35,27 @@ chmod -R 755 "$data_path"
 echo "Настройка временного SSL сертификата..."
 path="$data_path/conf/live/$domains"
 
-# Создаем директорию, если её нет
-mkdir -p $path
+# Проверяем создание директории
+if [ ! -d "$path" ]; then
+  echo "Ошибка: Не удалось создать директорию $path"
+  echo "Создаю директорию вручную..."
+  sudo mkdir -p "$path"
+  sudo chmod -R 755 "$path"
+fi
 
-# Запускаем docker-compose с правильными переменными окружения
+# Создаем временный сертификат
+echo "Создание временного сертификата..."
 docker-compose run --rm --entrypoint "\
+  mkdir -p /etc/letsencrypt/live/$domains && \
   openssl req -x509 -nodes -newkey rsa:$rsa_key_size -days 1\
-    -keyout '$path/privkey.pem' \
-    -out '$path/fullchain.pem' \
+    -keyout '/etc/letsencrypt/live/$domains/privkey.pem' \
+    -out '/etc/letsencrypt/live/$domains/fullchain.pem' \
     -subj '/CN=localhost'" certbot
 
-# Проверяем, созданы ли файлы сертификатов
-if [ ! -f "$path/privkey.pem" ] || [ ! -f "$path/fullchain.pem" ]; then
-  echo "Ошибка: не удалось создать временные сертификаты."
-  exit 1
-fi
+# Копируем сертификаты из контейнера в локальную директорию
+echo "Копирование сертификатов..."
+docker-compose run --rm --entrypoint "\
+  cp -L /etc/letsencrypt/live/$domains/privkey.pem /etc/letsencrypt/live/$domains/fullchain.pem /var/www/certbot/" certbot
 
 # Перезапускаем nginx для применения временных сертификатов
 echo "Перезапуск nginx..."
@@ -71,12 +79,6 @@ if [ $? -ne 0 ]; then
   echo "Проверьте настройки DNS и доступность вашего сервера из интернета."
   echo "Временно настройте nginx на работу без SSL."
   exit 1
-fi
-
-echo "Настройка постоянного обновления сертификатов..."
-# Создаем файл для cron, если он еще не существует
-if [ ! -f "/etc/cron.d/certbot-renewal" ]; then
-  echo "0 0,12 * * * root docker-compose -f $(pwd)/docker-compose.yml run --rm certbot renew" | sudo tee /etc/cron.d/certbot-renewal > /dev/null
 fi
 
 echo "Перезапуск nginx с новыми сертификатами..."
