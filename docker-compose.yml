@@ -6,13 +6,13 @@ services:
     container_name: frontend
     restart: unless-stopped
     depends_on:
-      - app
+      - backend
     environment:
       - REACT_APP_API_URL=http://app:8080
     networks:
       - app_network
 
-  backen:
+  backend:
     image: ${DOCKER_USERNAME:-russo2642}/job_solution:latest
     container_name: backend
     restart: unless-stopped
