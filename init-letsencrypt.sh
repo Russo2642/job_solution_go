@@ -5,7 +5,7 @@ if ! [ -x "$(command -v docker-compose)" ]; then
   exit 1
 fi
 
-domains=(77.240.38.137)
+domains=(jobsolution.kz)
 rsa_key_size=4096
 data_path="./certbot"
 email="gothiq2302@gmail.com"
@@ -24,7 +24,7 @@ if [ ! -d "$data_path/conf/live/$domains" ]; then
 fi
 
 echo "Настройка временного SSL сертификата..."
-path="/etc/letsencrypt/live/$domains"
+path="$data_path/conf/live/$domains"
 mkdir -p "$data_path/conf/live/$domains"
 
 # Создаем самоподписанный сертификат для начальной загрузки
@@ -36,7 +36,7 @@ docker-compose run --rm --entrypoint "\
 
 echo "Получение сертификата Let's Encrypt..."
 # Выключаем nginx
-docker-compose down
+docker-compose down nginx
 
 # Запускаем nginx
 docker-compose up --force-recreate -d nginx
@@ -51,6 +51,6 @@ docker-compose run --rm --entrypoint "\
     --force-renewal" certbot
 
 echo "Перезапускаем nginx..."
-docker-compose up -d
+docker-compose up -d nginx
 
 echo "Готово!" 
