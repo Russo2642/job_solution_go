@@ -39,8 +39,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    volumes:
-      - ./internal/db/migrations:/app/internal/db/migrations
     networks:
       - app_network
 
@@ -81,7 +79,7 @@ services:
       - app
     networks:
       - app_network
-    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    command: "nginx -g 'daemon off;'"
   
   certbot:
     image: certbot/certbot
@@ -93,8 +91,7 @@ services:
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
-  backend_postgres_data:
-    external: true
+  postgres_data:
 
 networks:
   app_network:

@@ -30,25 +30,36 @@ jobs:
 
       - name: Prepare deployment files
         run: |
-          # Создаем временную директорию для файлов деплоя
           mkdir -p deploy_files
-          
-          # Копируем docker-compose.yml
           cp docker-compose.yml deploy_files/
-          
-          # Копируем nginx.conf если он есть
+
+          # Copy nginx.conf if exists
           if [ -f "nginx.conf" ]; then
             cp nginx.conf deploy_files/
           fi
-          
-          # Копируем скрипт для инициализации SSL-сертификатов
+
+          # Copy SSL init script if exists
           if [ -f "init-letsencrypt.sh" ]; then
             cp init-letsencrypt.sh deploy_files/
             chmod +x deploy_files/init-letsencrypt.sh
           fi
-          
-          # Для проверки выводим список файлов
-          echo "Файлы для деплоя:"
+
+          # Copy certbot/conf if exists (certificates)
+          if [ -d "certbot/conf" ]; then
+            cp -r certbot/conf deploy_files/certbot_conf
+          fi
+
+          # Copy certbot/www if exists
+          if [ -d "certbot/www" ]; then
+            cp -r certbot/www deploy_files/certbot_www
+          fi
+
+          # Copy ssl folder if exists
+          if [ -d "ssl" ]; then
+            cp -r ssl deploy_files/ssl
+          fi
+
+          echo "Deployment files prepared:"
           ls -la deploy_files/
 
       - name: Copy deployment files to server
@@ -73,55 +84,61 @@ jobs:
             set -e
 
             cd ~
-            
-            # Создаём директории laps/backend если они не существуют
             sudo mkdir -p laps/backend
             cd ~/laps/backend
-            
-            # Создаём необходимые директории
-            sudo mkdir -p ~/laps/backend/certbot/conf ~/laps/backend/certbot/www ~/laps/backend/ssl
-            
-            # Копируем файлы из временной директории деплоя
+
+            sudo mkdir -p certbot/conf certbot/www ssl
+
             if [ -d ~/temp_deploy ]; then
-              # Копируем docker-compose.yml и nginx.conf с проверкой прав
               sudo cp ~/temp_deploy/docker-compose.yml ./docker-compose.yml
               sudo chown $(whoami):$(whoami) ./docker-compose.yml
-              
+
               if [ -f ~/temp_deploy/nginx.conf ]; then
                 sudo cp ~/temp_deploy/nginx.conf ./nginx.conf
                 sudo chown $(whoami):$(whoami) ./nginx.conf
               fi
-              
-              # Копируем скрипт для SSL
+
               if [ -f ~/temp_deploy/init-letsencrypt.sh ]; then
                 sudo cp ~/temp_deploy/init-letsencrypt.sh ./init-letsencrypt.sh
                 sudo chmod +x ./init-letsencrypt.sh
                 sudo chown $(whoami):$(whoami) ./init-letsencrypt.sh
               fi
-              
-              # Удаляем временную директорию
+
+              if [ -d ~/temp_deploy/certbot_conf ]; then
+                sudo rm -rf ./certbot/conf
+                sudo cp -r ~/temp_deploy/certbot_conf ./certbot/conf
+                sudo chown -R $(whoami):$(whoami) ./certbot/conf
+              fi
+
+              if [ -d ~/temp_deploy/certbot_www ]; then
+                sudo rm -rf ./certbot/www
+                sudo cp -r ~/temp_deploy/certbot_www ./certbot/www
+                sudo chown -R $(whoami):$(whoami) ./certbot/www
+              fi
+
+              if [ -d ~/temp_deploy/ssl ]; then
+                sudo rm -rf ./ssl
+                sudo cp -r ~/temp_deploy/ssl ./ssl
+                sudo chown -R $(whoami):$(whoami) ./ssl
+              fi
+
               rm -rf ~/temp_deploy
             else
-              echo "ОШИБКА: Директория temp_deploy не найдена!"
+              echo "ERROR: temp_deploy directory not found!"
               exit 1
             fi
 
-            # Принудительная остановка всех старых контейнеров
-            echo "Остановка всех старых контейнеров..."
+            echo "Stopping old containers..."
             docker-compose down || true
-            
-            # Проверка на наличие "зависших" контейнеров и их удаление
+
             if docker ps -a | grep "job_solution_"; then
-              echo "Обнаружены старые контейнеры, удаляем их принудительно..."
               docker ps -a | grep "job_solution_" | awk '{print $1}' | xargs -r docker rm -f
             fi
-            
-            # Загрузка образов
-            echo "Загрузка новых образов..."
+
+            echo "Pulling latest images..."
             docker-compose pull
 
-            # Запуск новых контейнеров с переменными окружения
-            echo "Запуск новых контейнеров..."
+            echo "Starting new containers..."
             SERVER_PORT=${{ secrets.SERVER_PORT }} \
             SERVER_MODE=${{ secrets.SERVER_MODE }} \
             POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
@@ -142,19 +159,14 @@ jobs:
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
             docker-compose up -d
 
-            # Настройка SSL-сертификатов, если скрипт существует и не было ранее настроенных сертификатов
             if [ -f "./init-letsencrypt.sh" ] && [ ! -d "certbot/conf/live" ]; then
-              echo "Запуск настройки SSL-сертификатов..."
+              echo "Running SSL initialization..."
               ./init-letsencrypt.sh
-              
-              # Перезапуск Nginx для применения изменений
               docker-compose restart nginx
-              echo "HTTPS настроен и активирован!"
+              echo "HTTPS configured and activated!"
             fi
-            
-            # Очистка неиспользуемых образов
+
             docker image prune -af
-            
-            # Отображение статуса
-            echo "Статус контейнеров:"
+
+            echo "Containers status:"
             docker-compose ps

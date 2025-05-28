@@ -29,10 +29,6 @@ docker-compose run --rm --entrypoint "\
     -out '$path/fullchain.pem' \
     -subj '/CN=localhost'" certbot
 
-echo "Перезапускаем только nginx..."
-docker-compose stop nginx
-docker-compose up -d nginx
-
 echo "Получение сертификата Let's Encrypt..."
 docker-compose run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
@@ -41,8 +37,5 @@ docker-compose run --rm --entrypoint "\
     --no-eff-email \
     -d $domains \
     --force-renewal" certbot
-
-echo "Перезапускаем nginx после получения сертификата..."
-docker-compose restart nginx
 
 echo "Готово!"
