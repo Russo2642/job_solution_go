@@ -64,7 +64,7 @@ func (p *PostgreSQL) ensureBasicStructureExists() error {
 	err = p.db.QueryRow("SELECT COUNT(*) FROM migration_history WHERE filename = '0001_schema.sql'").Scan(&count)
 
 	if err != nil || count == 0 {
-		schemaPath := filepath.Join("internal", "db", "migrations", "0001_schema.sql")
+		schemaPath := "migrations/0001_schema.sql"
 		schemaSQL, err := os.ReadFile(schemaPath)
 		if err != nil {
 			return fmt.Errorf("ошибка при чтении файла 0001_schema.sql: %w", err)
