@@ -104,39 +104,6 @@ jobs:
               exit 1
             fi
 
-            # Создание .env файла
-            cat > .env <<EOL
-            # Настройки сервера
-            SERVER_PORT=${{ secrets.SERVER_PORT }}
-            SERVER_MODE=${{ secrets.SERVER_MODE }}
-
-            # PostgreSQL
-            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }}
-            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }}
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-            POSTGRES_SSLMODE=${{ secrets.POSTGRES_SSLMODE }}
-            POSTGRES_MAX_OPEN_CONNS=${{ secrets.POSTGRES_MAX_OPEN_CONNS }}
-            POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS }}
-            POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME }}
-
-            # JWT
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
-            JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }}
-
-            # Безопасность
-            PASSWORD_SALT=${{ secrets.PASSWORD_SALT }}
-
-            # Лимиты запросов
-            RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS }}
-            RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION }}
-
-            # Docker Hub
-            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-            EOL
-
             # Принудительная остановка всех старых контейнеров
             echo "Остановка всех старых контейнеров..."
             docker-compose down || true
@@ -151,8 +118,26 @@ jobs:
             echo "Загрузка новых образов..."
             docker-compose pull
 
-            # Запуск новых контейнеров
+            # Запуск новых контейнеров с переменными окружения
             echo "Запуск новых контейнеров..."
+            SERVER_PORT=${{ secrets.SERVER_PORT }} \
+            SERVER_MODE=${{ secrets.SERVER_MODE }} \
+            POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
+            POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
+            POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+            POSTGRES_SSLMODE=${{ secrets.POSTGRES_SSLMODE }} \
+            POSTGRES_MAX_OPEN_CONNS=${{ secrets.POSTGRES_MAX_OPEN_CONNS }} \
+            POSTGRES_MAX_IDLE_CONNS=${{ secrets.POSTGRES_MAX_IDLE_CONNS }} \
+            POSTGRES_CONN_MAX_LIFETIME=${{ secrets.POSTGRES_CONN_MAX_LIFETIME }} \
+            JWT_SECRET=${{ secrets.JWT_SECRET }} \
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
+            JWT_REFRESH_EXPIRES_IN=${{ secrets.JWT_REFRESH_EXPIRES_IN }} \
+            PASSWORD_SALT=${{ secrets.PASSWORD_SALT }} \
+            RATE_LIMIT_REQUESTS=${{ secrets.RATE_LIMIT_REQUESTS }} \
+            RATE_LIMIT_DURATION=${{ secrets.RATE_LIMIT_DURATION }} \
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} \
             docker-compose up -d
 
             # Настройка SSL-сертификатов, если скрипт существует и не было ранее настроенных сертификатов
