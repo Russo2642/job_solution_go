@@ -81,7 +81,7 @@ jobs:
             cd laps/backend
             
             # Создаём необходимые директории
-            mkdir -p certbot/conf certbot/www
+            mkdir -p certbot/conf certbot/www ssl
             
             # Копируем файлы из временной директории деплоя
             if [ -d ~/temp_deploy ]; then
