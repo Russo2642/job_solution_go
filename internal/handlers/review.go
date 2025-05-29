@@ -295,6 +295,124 @@ func (h *ReviewHandler) GetPendingReviews(c *gin.Context) {
 	})
 }
 
+// @Summary Одобренные отзывы
+// @Description Возвращает список одобренных отзывов
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Номер страницы"
+// @Param limit query int false "Количество записей на странице"
+// @Success 200 {object} utils.ResponseDTO
+// @Failure 401 {object} utils.ErrorResponseDTO
+// @Failure 403 {object} utils.ErrorResponseDTO
+// @Failure 500 {object} utils.ErrorResponseDTO
+// @Router /admin/reviews/moderation/approved [get]
+func (h *ReviewHandler) GetApprovedReviews(c *gin.Context) {
+	roleValue, exists := c.Get(middleware.RoleKey)
+	if !exists || (roleValue.(models.UserRole) != models.RoleModerator && roleValue.(models.UserRole) != models.RoleAdmin) {
+		utils.ErrorResponse(c, http.StatusForbidden, "Недостаточно прав для просмотра одобренных отзывов", nil)
+		return
+	}
+
+	var filter models.ReviewFilter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Ошибка валидации параметров", err)
+		return
+	}
+
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 {
+		filter.Limit = 10
+	}
+	if filter.SortBy == "" {
+		filter.SortBy = "created_at"
+	}
+	if filter.SortOrder == "" {
+		filter.SortOrder = "desc"
+	}
+
+	status := models.ReviewStatusApproved
+	filter.Status = &status
+
+	reviews, total, err := h.repo.Reviews.GetApproved(c, filter)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении отзывов", err)
+		return
+	}
+
+	utils.Response(c, http.StatusOK, gin.H{
+		"reviews": reviews,
+		"pagination": gin.H{
+			"total": total,
+			"page":  filter.Page,
+			"limit": filter.Limit,
+			"pages": (total + filter.Limit - 1) / filter.Limit,
+		},
+	})
+}
+
+// @Summary Отклоненные отзывы
+// @Description Возвращает список отклоненных отзывов
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "Номер страницы"
+// @Param limit query int false "Количество записей на странице"
+// @Success 200 {object} utils.ResponseDTO
+// @Failure 401 {object} utils.ErrorResponseDTO
+// @Failure 403 {object} utils.ErrorResponseDTO
+// @Failure 500 {object} utils.ErrorResponseDTO
+// @Router /admin/reviews/moderation/rejected [get]
+func (h *ReviewHandler) GetRejectedReviews(c *gin.Context) {
+	roleValue, exists := c.Get(middleware.RoleKey)
+	if !exists || (roleValue.(models.UserRole) != models.RoleModerator && roleValue.(models.UserRole) != models.RoleAdmin) {
+		utils.ErrorResponse(c, http.StatusForbidden, "Недостаточно прав для просмотра отклоненных отзывов", nil)
+		return
+	}
+
+	var filter models.ReviewFilter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		utils.ErrorResponse(c, http.StatusBadRequest, "Ошибка валидации параметров", err)
+		return
+	}
+
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 {
+		filter.Limit = 10
+	}
+	if filter.SortBy == "" {
+		filter.SortBy = "created_at"
+	}
+	if filter.SortOrder == "" {
+		filter.SortOrder = "desc"
+	}
+
+	status := models.ReviewStatusRejected
+	filter.Status = &status
+
+	reviews, total, err := h.repo.Reviews.GetRejected(c, filter)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении отзывов", err)
+		return
+	}
+
+	utils.Response(c, http.StatusOK, gin.H{
+		"reviews": reviews,
+		"pagination": gin.H{
+			"total": total,
+			"page":  filter.Page,
+			"limit": filter.Limit,
+			"pages": (total + filter.Limit - 1) / filter.Limit,
+		},
+	})
+}
+
 // @Summary Одобрение отзыва
 // @Description Одобряет отзыв, прошедший модерацию
 // @Tags admin

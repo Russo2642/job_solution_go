@@ -243,11 +243,11 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 // @Summary Восстановление пароля
-// @Description Отправляет запрос на восстановление пароля и создает токен для сброса
+// @Description Позволяет пользователю сбросить пароль, указав email и новый пароль
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param input body models.ForgotPasswordInput true "Email пользователя"
+// @Param input body models.ForgotPasswordInput true "Email пользователя и новый пароль"
 // @Success 200 {object} utils.ResponseDTO
 // @Failure 400 {object} utils.ErrorResponseDTO
 // @Failure 404 {object} utils.ErrorResponseDTO
@@ -260,67 +260,14 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	user, err := h.repo.Users.GetByEmail(c, input.Email)
-	if err != nil {
-		utils.Response(c, http.StatusOK, gin.H{
-			"message": "Если указанный email зарегистрирован в системе, на него будет отправлена инструкция по восстановлению пароля",
-		})
-		return
-	}
-
-	resetToken := models.NewPasswordResetToken(user.ID)
-	_, err = h.repo.PasswordResetTokens.Create(c, &resetToken)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при создании токена сброса пароля", err)
-		return
-	}
-
-	// TODO: Отправка email с инструкцией по восстановлению пароля
-	// В реальном приложении здесь должна быть отправка email с токеном
-
-	utils.Response(c, http.StatusOK, gin.H{
-		"message": "Инструкция по восстановлению пароля отправлена на указанный email",
-		"reset_token": resetToken.Token,
-	})
-}
-
-// @Summary Сброс пароля
-// @Description Сбрасывает пароль пользователя по токену
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param input body models.ResetPasswordInput true "Данные для сброса пароля"
-// @Success 200 {object} utils.ResponseDTO
-// @Failure 400 {object} utils.ErrorResponseDTO
-// @Failure 401 {object} utils.ErrorResponseDTO
-// @Failure 500 {object} utils.ErrorResponseDTO
-// @Router /auth/reset-password [post]
-func (h *AuthHandler) ResetPassword(c *gin.Context) {
-	var input models.ResetPasswordInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		utils.ErrorResponse(c, http.StatusBadRequest, "Ошибка валидации", err)
-		return
-	}
-
 	if input.Password != input.PasswordConfirm {
 		utils.ErrorResponse(c, http.StatusBadRequest, "Пароли не совпадают", nil)
 		return
 	}
 
-	resetToken, err := h.repo.PasswordResetTokens.GetByToken(c, input.Token)
+	user, err := h.repo.Users.GetByEmail(c, input.Email)
 	if err != nil {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Недействительный токен сброса пароля", nil)
-		return
-	}
-
-	if resetToken.ExpiresAt.Before(time.Now()) {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Токен сброса пароля просрочен", nil)
-		return
-	}
-
-	user, err := h.repo.Users.GetByID(c, resetToken.UserID)
-	if err != nil {
-		utils.ErrorResponse(c, http.StatusUnauthorized, "Пользователь не найден", nil)
+		utils.ErrorResponse(c, http.StatusNotFound, "Пользователь с указанным email не найден", nil)
 		return
 	}
 
@@ -329,16 +276,12 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при хешировании пароля", err)
 		return
 	}
+
 	user.PasswordHash = string(passwordHash)
 	user.UpdatedAt = time.Now()
 
 	if err := h.repo.Users.Update(c, user); err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при обновлении пароля", err)
-		return
-	}
-
-	if err := h.repo.PasswordResetTokens.DeleteByToken(c, input.Token); err != nil {
-		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при удалении токена сброса пароля", err)
 		return
 	}
 

@@ -55,6 +55,7 @@ func (h *SuggestionHandlers) CreateSuggestion(c *gin.Context) {
 // @Tags suggestions
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param type query string false "Тип предложения (company/suggestion)"
 // @Param sort_order query string false "Порядок сортировки (asc/desc)"
 // @Param page query int false "Номер страницы"
@@ -89,6 +90,7 @@ func (h *SuggestionHandlers) GetAllSuggestions(c *gin.Context) {
 // @Tags suggestions
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path int true "ID предложения"
 // @Success 200 {object} map[string]interface{}
 // @Failure 400 {object} utils.ErrorResponseDTO

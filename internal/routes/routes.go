@@ -22,7 +22,6 @@ func SetupAuthRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *conf
 		auth.POST("/refresh", authHandler.RefreshToken)
 		auth.POST("/logout", authHandler.Logout)
 		auth.POST("/forgot-password", authHandler.ForgotPassword)
-		auth.POST("/reset-password", authHandler.ResetPassword)
 	}
 }
 
@@ -171,6 +170,8 @@ func SetupAdminRoutes(router *gin.RouterGroup, postgres *db.PostgreSQL, cfg *con
 	admin.PUT("/reviews/:id", adminHandler.UpdateReview)
 	admin.DELETE("/reviews/:id", adminHandler.DeleteReview)
 	admin.GET("/reviews/moderation/pending", reviewHandler.GetPendingReviews)
+	admin.GET("/reviews/moderation/approved", reviewHandler.GetApprovedReviews)
+	admin.GET("/reviews/moderation/rejected", reviewHandler.GetRejectedReviews)
 	admin.PUT("/reviews/:id/approve", reviewHandler.ApproveReview)
 	admin.PUT("/reviews/:id/reject", reviewHandler.RejectReview)
 

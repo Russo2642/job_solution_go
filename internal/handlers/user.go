@@ -79,6 +79,18 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
+	if input.Password != nil {
+		if input.PasswordConfirm == nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, "Требуется подтверждение пароля", nil)
+			return
+		}
+
+		if *input.Password != *input.PasswordConfirm {
+			utils.ErrorResponse(c, http.StatusBadRequest, "Пароли не совпадают", nil)
+			return
+		}
+	}
+
 	user, err := h.repo.Users.GetByID(c, userID.(int))
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Пользователь не найден", nil)

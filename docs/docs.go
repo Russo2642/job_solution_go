@@ -1437,6 +1437,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/reviews/moderation/approved": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список одобренных отзывов",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Одобренные отзывы",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество записей на странице",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ResponseDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/reviews/moderation/pending": {
             "get": {
                 "security": [
@@ -1455,6 +1515,66 @@ const docTemplate = `{
                     "admin"
                 ],
                 "summary": "Отзывы на модерации",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Номер страницы",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Количество записей на странице",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ResponseDTO"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponseDTO"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reviews/moderation/rejected": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список отклоненных отзывов",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Отклоненные отзывы",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2106,7 +2226,7 @@ const docTemplate = `{
         },
         "/auth/forgot-password": {
             "post": {
-                "description": "Отправляет запрос на восстановление пароля и создает токен для сброса",
+                "description": "Позволяет пользователю сбросить пароль, указав email и новый пароль",
                 "consumes": [
                     "application/json"
                 ],
@@ -2119,7 +2239,7 @@ const docTemplate = `{
                 "summary": "Восстановление пароля",
                 "parameters": [
                     {
-                        "description": "Email пользователя",
+                        "description": "Email пользователя и новый пароль",
                         "name": "input",
                         "in": "body",
                         "required": true,
@@ -2351,58 +2471,6 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/utils.ErrorResponseDTO"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/utils.ErrorResponseDTO"
-                        }
-                    }
-                }
-            }
-        },
-        "/auth/reset-password": {
-            "post": {
-                "description": "Сбрасывает пароль пользователя по токену",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "auth"
-                ],
-                "summary": "Сброс пароля",
-                "parameters": [
-                    {
-                        "description": "Данные для сброса пароля",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.ResetPasswordInput"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/utils.ResponseDTO"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/utils.ErrorResponseDTO"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/utils.ErrorResponseDTO"
                         }
@@ -3532,6 +3600,11 @@ const docTemplate = `{
         },
         "/suggestions": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Возвращает список предложений с фильтрацией по типу и сортировкой по дате",
                 "consumes": [
                     "application/json"
@@ -3639,6 +3712,11 @@ const docTemplate = `{
         },
         "/suggestions/{id}": {
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Удаляет предложение по ID",
                 "consumes": [
                     "application/json"
@@ -4068,10 +4146,19 @@ const docTemplate = `{
         "models.ForgotPasswordInput": {
             "type": "object",
             "required": [
-                "email"
+                "email",
+                "password",
+                "password_confirm"
             ],
             "properties": {
                 "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "password_confirm": {
                     "type": "string"
                 }
             }
@@ -4107,26 +4194,6 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 100,
                     "minLength": 2
-                }
-            }
-        },
-        "models.ResetPasswordInput": {
-            "type": "object",
-            "required": [
-                "password",
-                "password_confirm",
-                "token"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string",
-                    "minLength": 8
-                },
-                "password_confirm": {
-                    "type": "string"
-                },
-                "token": {
-                    "type": "string"
                 }
             }
         },
@@ -4352,6 +4419,9 @@ const docTemplate = `{
                 "password": {
                     "type": "string",
                     "minLength": 8
+                },
+                "password_confirm": {
+                    "type": "string"
                 },
                 "phone": {
                     "type": "string"

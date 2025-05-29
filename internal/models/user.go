@@ -52,18 +52,15 @@ type UserLoginInput struct {
 }
 
 type UserUpdateInput struct {
-	Phone     *string `json:"phone" binding:"omitempty,phone"`
-	FirstName *string `json:"first_name" binding:"omitempty"`
-	LastName  *string `json:"last_name" binding:"omitempty"`
-	Password  *string `json:"password" binding:"omitempty,min=8"`
+	Phone           *string `json:"phone" binding:"omitempty,phone"`
+	FirstName       *string `json:"first_name" binding:"omitempty"`
+	LastName        *string `json:"last_name" binding:"omitempty"`
+	Password        *string `json:"password" binding:"omitempty,min=8"`
+	PasswordConfirm *string `json:"password_confirm" binding:"omitempty,eqfield=Password"`
 }
 
 type ForgotPasswordInput struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-type ResetPasswordInput struct {
-	Token           string `json:"token" binding:"required"`
+	Email           string `json:"email" binding:"required,email"`
 	Password        string `json:"password" binding:"required,min=8"`
 	PasswordConfirm string `json:"password_confirm" binding:"required,eqfield=Password"`
 }

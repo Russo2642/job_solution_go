@@ -161,8 +161,15 @@ definitions:
     properties:
       email:
         type: string
+      password:
+        minLength: 8
+        type: string
+      password_confirm:
+        type: string
     required:
     - email
+    - password
+    - password_confirm
     type: object
   models.IndustryInput:
     properties:
@@ -187,20 +194,6 @@ definitions:
         type: string
     required:
     - name
-    type: object
-  models.ResetPasswordInput:
-    properties:
-      password:
-        minLength: 8
-        type: string
-      password_confirm:
-        type: string
-      token:
-        type: string
-    required:
-    - password
-    - password_confirm
-    - token
     type: object
   models.ReviewInput:
     properties:
@@ -355,6 +348,8 @@ definitions:
         type: string
       password:
         minLength: 8
+        type: string
+      password_confirm:
         type: string
       phone:
         type: string
@@ -1489,6 +1484,44 @@ paths:
       summary: Отклонение отзыва
       tags:
       - admin
+  /admin/reviews/moderation/approved:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список одобренных отзывов
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Одобренные отзывы
+      tags:
+      - admin
   /admin/reviews/moderation/pending:
     get:
       consumes:
@@ -1525,6 +1558,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Отзывы на модерации
+      tags:
+      - admin
+  /admin/reviews/moderation/rejected:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список отклоненных отзывов
+      parameters:
+      - description: Номер страницы
+        in: query
+        name: page
+        type: integer
+      - description: Количество записей на странице
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.ResponseDTO'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
+      summary: Отклоненные отзывы
       tags:
       - admin
   /admin/statistics:
@@ -1733,10 +1804,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Отправляет запрос на восстановление пароля и создает токен для
-        сброса
+      description: Позволяет пользователю сбросить пароль, указав email и новый пароль
       parameters:
-      - description: Email пользователя
+      - description: Email пользователя и новый пароль
         in: body
         name: input
         required: true
@@ -1898,40 +1968,6 @@ paths:
           schema:
             $ref: '#/definitions/utils.ErrorResponseDTO'
       summary: Регистрация нового пользователя
-      tags:
-      - auth
-  /auth/reset-password:
-    post:
-      consumes:
-      - application/json
-      description: Сбрасывает пароль пользователя по токену
-      parameters:
-      - description: Данные для сброса пароля
-        in: body
-        name: input
-        required: true
-        schema:
-          $ref: '#/definitions/models.ResetPasswordInput'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/utils.ResponseDTO'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/utils.ErrorResponseDTO'
-      summary: Сброс пароля
       tags:
       - auth
   /benefit-types:
@@ -2705,6 +2741,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
       summary: Получить все предложения
       tags:
       - suggestions
@@ -2769,6 +2807,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/utils.ErrorResponseDTO'
+      security:
+      - BearerAuth: []
       summary: Удалить предложение
       tags:
       - suggestions

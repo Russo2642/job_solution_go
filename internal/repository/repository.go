@@ -69,6 +69,8 @@ type ReviewRepository interface {
 	GetByCompany(ctx context.Context, companyID int, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error)
 	GetByUser(ctx context.Context, userID int, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error)
 	GetPending(ctx context.Context, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error)
+	GetApproved(ctx context.Context, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error)
+	GetRejected(ctx context.Context, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error)
 	Update(ctx context.Context, review *models.Review) error
 	Delete(ctx context.Context, id int) error
 	AddCategoryRating(ctx context.Context, reviewID int, categoryID int, rating float64) error
@@ -82,6 +84,8 @@ type ReviewRepository interface {
 	GetUsefulMarksByReviews(ctx context.Context, userID int, reviewIDs []int) (map[int]bool, error)
 	Count(ctx context.Context) (int, error)
 	CountPending(ctx context.Context) (int, error)
+	CountApproved(ctx context.Context) (int, error)
+	CountRejected(ctx context.Context) (int, error)
 }
 
 type RefreshTokenRepository interface {

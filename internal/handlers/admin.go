@@ -70,6 +70,18 @@ func (h *AdminHandler) GetStatistics(c *gin.Context) {
 		return
 	}
 
+	approvedReviews, err := h.repo.Reviews.CountApproved(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении количества одобренных отзывов", err)
+		return
+	}
+
+	rejectedReviews, err := h.repo.Reviews.CountRejected(c)
+	if err != nil {
+		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении количества отклоненных отзывов", err)
+		return
+	}
+
 	citiesCount, err := h.repo.Cities.Count(c)
 	if err != nil {
 		utils.ErrorResponse(c, http.StatusInternalServerError, "Ошибка при получении количества городов", err)
@@ -111,6 +123,8 @@ func (h *AdminHandler) GetStatistics(c *gin.Context) {
 		CompaniesCount:         companiesCount,
 		ReviewsCount:           reviewsCount,
 		PendingReviews:         pendingReviews,
+		ApprovedReviews:        approvedReviews,
+		RejectedReviews:        rejectedReviews,
 		CitiesCount:            citiesCount,
 		IndustriesCount:        industriesCount,
 		BenefitTypesCount:      benefitTypesCount,

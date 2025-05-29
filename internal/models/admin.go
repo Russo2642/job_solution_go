@@ -1,11 +1,12 @@
 package models
 
 type AdminStatistics struct {
-	UsersCount     int `json:"users_count"`
-	CompaniesCount int `json:"companies_count"`
-	ReviewsCount   int `json:"reviews_count"`
-	PendingReviews int `json:"pending_reviews"`
-
+	UsersCount             int `json:"users_count"`
+	CompaniesCount         int `json:"companies_count"`
+	ReviewsCount           int `json:"reviews_count"`
+	PendingReviews         int `json:"pending_reviews"`
+	ApprovedReviews        int `json:"approved_reviews"`
+	RejectedReviews        int `json:"rejected_reviews"`
 	CitiesCount            int `json:"cities_count"`
 	IndustriesCount        int `json:"industries_count"`
 	BenefitTypesCount      int `json:"benefit_types_count"`

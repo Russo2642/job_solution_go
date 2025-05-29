@@ -841,7 +841,291 @@ func (r *ReviewRepositoryImpl) CountPending(ctx context.Context) (int, error) {
 	query := "SELECT COUNT(*) FROM reviews WHERE status = 'pending'"
 	err := r.postgres.GetContext(ctx, &count, query)
 	if err != nil {
-		return 0, fmt.Errorf("ошибка при подсчете ожидающих отзывов: %w", err)
+		return 0, fmt.Errorf("ошибка при подсчете отзывов на модерации: %w", err)
+	}
+	return count, nil
+}
+
+func (r *ReviewRepositoryImpl) GetApproved(ctx context.Context, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error) {
+	baseQuery := `
+		FROM reviews 
+		WHERE status = 'approved'
+	`
+
+	conditions := []string{}
+	args := []interface{}{}
+	argID := 1
+
+	if filter.CompanyID != nil {
+		conditions = append(conditions, fmt.Sprintf("company_id = $%d", argID))
+		args = append(args, *filter.CompanyID)
+		argID++
+	}
+
+	if filter.CityID != nil && *filter.CityID > 0 {
+		conditions = append(conditions, fmt.Sprintf("city_id = $%d", argID))
+		args = append(args, *filter.CityID)
+		argID++
+	}
+
+	queryConditions := baseQuery
+	if len(conditions) > 0 {
+		queryConditions += " AND " + strings.Join(conditions, " AND ")
+	}
+
+	countQuery := "SELECT COUNT(*) " + queryConditions
+
+	sortBy := "created_at"
+	if filter.SortBy != "" {
+		sortBy = filter.SortBy
+	}
+
+	sortOrder := "DESC"
+	if filter.SortOrder == "asc" {
+		sortOrder = "ASC"
+	}
+
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 {
+		filter.Limit = 10
+	}
+
+	offset := (filter.Page - 1) * filter.Limit
+
+	dataQuery := fmt.Sprintf(`
+		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating,
+		       pros, cons, is_former_employee, is_recommended, status, moderation_comment, useful_count, created_at, updated_at, approved_at
+		%s
+		ORDER BY %s %s
+		LIMIT $%d OFFSET $%d
+	`, queryConditions, sortBy, sortOrder, argID, argID+1)
+
+	args = append(args, filter.Limit, offset)
+
+	var total int
+	err := r.postgres.GetContext(ctx, &total, countQuery, args[:len(args)-2]...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при подсчете одобренных отзывов: %w", err)
+	}
+
+	var reviews []models.Review
+	err = r.postgres.SelectContext(ctx, &reviews, dataQuery, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при получении одобренных отзывов: %w", err)
+	}
+
+	result := make([]models.ReviewWithDetails, len(reviews))
+	cityRepo := NewCityRepository(r.postgres)
+	employmentTypeRepo := NewEmploymentTypeRepository(r.postgres)
+	employmentPeriodRepo := NewEmploymentPeriodRepository(r.postgres)
+	companyRepo := NewCompanyRepository(r.postgres)
+
+	for i, review := range reviews {
+		categoryRatings, err := r.GetCategoryRatings(ctx, review.ID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("ошибка при получении рейтингов отзыва: %w", err)
+		}
+
+		benefits, err := r.GetBenefits(ctx, review.ID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("ошибка при получении льгот отзыва: %w", err)
+		}
+
+		var city *models.City
+		if review.CityID != nil && *review.CityID > 0 {
+			cityData, err := cityRepo.GetByID(ctx, *review.CityID)
+			if err == nil {
+				city = cityData
+			}
+		}
+
+		var employmentType *models.EmploymentType
+		if review.EmploymentTypeID != nil {
+			employmentTypeData, err := employmentTypeRepo.GetByID(ctx, *review.EmploymentTypeID)
+			if err == nil {
+				employmentType = employmentTypeData
+			}
+		}
+
+		var employmentPeriod *models.EmploymentPeriod
+		if review.EmploymentPeriodID != nil {
+			employmentPeriodData, err := employmentPeriodRepo.GetByID(ctx, *review.EmploymentPeriodID)
+			if err == nil {
+				employmentPeriod = employmentPeriodData
+			}
+		}
+
+		var company *models.CompanyWithRatings
+		companyData, err := companyRepo.GetByID(ctx, review.CompanyID)
+		if err == nil {
+			company = companyData
+		}
+
+		result[i] = models.ReviewWithDetails{
+			Review:           review,
+			CategoryRatings:  categoryRatings,
+			Benefits:         benefits,
+			City:             city,
+			EmploymentType:   employmentType,
+			EmploymentPeriod: employmentPeriod,
+			Company:          company,
+			IsMarkedAsUseful: false,
+		}
+	}
+
+	return result, total, nil
+}
+
+func (r *ReviewRepositoryImpl) GetRejected(ctx context.Context, filter models.ReviewFilter) ([]models.ReviewWithDetails, int, error) {
+	baseQuery := `
+		FROM reviews 
+		WHERE status = 'rejected'
+	`
+
+	conditions := []string{}
+	args := []interface{}{}
+	argID := 1
+
+	if filter.CompanyID != nil {
+		conditions = append(conditions, fmt.Sprintf("company_id = $%d", argID))
+		args = append(args, *filter.CompanyID)
+		argID++
+	}
+
+	if filter.CityID != nil && *filter.CityID > 0 {
+		conditions = append(conditions, fmt.Sprintf("city_id = $%d", argID))
+		args = append(args, *filter.CityID)
+		argID++
+	}
+
+	queryConditions := baseQuery
+	if len(conditions) > 0 {
+		queryConditions += " AND " + strings.Join(conditions, " AND ")
+	}
+
+	countQuery := "SELECT COUNT(*) " + queryConditions
+
+	sortBy := "created_at"
+	if filter.SortBy != "" {
+		sortBy = filter.SortBy
+	}
+
+	sortOrder := "DESC"
+	if filter.SortOrder == "asc" {
+		sortOrder = "ASC"
+	}
+
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.Limit <= 0 {
+		filter.Limit = 10
+	}
+
+	offset := (filter.Page - 1) * filter.Limit
+
+	dataQuery := fmt.Sprintf(`
+		SELECT id, user_id, company_id, position, employment_type_id, employment_period_id, city_id, rating,
+		       pros, cons, is_former_employee, is_recommended, status, moderation_comment, useful_count, created_at, updated_at, approved_at
+		%s
+		ORDER BY %s %s
+		LIMIT $%d OFFSET $%d
+	`, queryConditions, sortBy, sortOrder, argID, argID+1)
+
+	args = append(args, filter.Limit, offset)
+
+	var total int
+	err := r.postgres.GetContext(ctx, &total, countQuery, args[:len(args)-2]...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при подсчете отклоненных отзывов: %w", err)
+	}
+
+	var reviews []models.Review
+	err = r.postgres.SelectContext(ctx, &reviews, dataQuery, args...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("ошибка при получении отклоненных отзывов: %w", err)
+	}
+
+	result := make([]models.ReviewWithDetails, len(reviews))
+	cityRepo := NewCityRepository(r.postgres)
+	employmentTypeRepo := NewEmploymentTypeRepository(r.postgres)
+	employmentPeriodRepo := NewEmploymentPeriodRepository(r.postgres)
+	companyRepo := NewCompanyRepository(r.postgres)
+
+	for i, review := range reviews {
+		categoryRatings, err := r.GetCategoryRatings(ctx, review.ID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("ошибка при получении рейтингов отзыва: %w", err)
+		}
+
+		benefits, err := r.GetBenefits(ctx, review.ID)
+		if err != nil {
+			return nil, 0, fmt.Errorf("ошибка при получении льгот отзыва: %w", err)
+		}
+
+		var city *models.City
+		if review.CityID != nil && *review.CityID > 0 {
+			cityData, err := cityRepo.GetByID(ctx, *review.CityID)
+			if err == nil {
+				city = cityData
+			}
+		}
+
+		var employmentType *models.EmploymentType
+		if review.EmploymentTypeID != nil {
+			employmentTypeData, err := employmentTypeRepo.GetByID(ctx, *review.EmploymentTypeID)
+			if err == nil {
+				employmentType = employmentTypeData
+			}
+		}
+
+		var employmentPeriod *models.EmploymentPeriod
+		if review.EmploymentPeriodID != nil {
+			employmentPeriodData, err := employmentPeriodRepo.GetByID(ctx, *review.EmploymentPeriodID)
+			if err == nil {
+				employmentPeriod = employmentPeriodData
+			}
+		}
+
+		var company *models.CompanyWithRatings
+		companyData, err := companyRepo.GetByID(ctx, review.CompanyID)
+		if err == nil {
+			company = companyData
+		}
+
+		result[i] = models.ReviewWithDetails{
+			Review:           review,
+			CategoryRatings:  categoryRatings,
+			Benefits:         benefits,
+			City:             city,
+			EmploymentType:   employmentType,
+			EmploymentPeriod: employmentPeriod,
+			Company:          company,
+			IsMarkedAsUseful: false,
+		}
+	}
+
+	return result, total, nil
+}
+
+func (r *ReviewRepositoryImpl) CountApproved(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM reviews WHERE status = 'approved'"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете одобренных отзывов: %w", err)
+	}
+	return count, nil
+}
+
+func (r *ReviewRepositoryImpl) CountRejected(ctx context.Context) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM reviews WHERE status = 'rejected'"
+	err := r.postgres.GetContext(ctx, &count, query)
+	if err != nil {
+		return 0, fmt.Errorf("ошибка при подсчете отклоненных отзывов: %w", err)
 	}
 	return count, nil
 }
